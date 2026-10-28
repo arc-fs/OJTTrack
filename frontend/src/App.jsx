@@ -6,7 +6,8 @@ function App() {
     const [applications, setApplications] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
-
+    const [search, setSearch] = useState('')
+    const [statusFilter, setStatusFilter] = useState('ALL')
     const [companyName, setCompanyName] = useState('')
     const [status, setStatus] = useState('PLANNED')
     const [formError, setFormError] = useState(null)
@@ -68,7 +69,11 @@ function App() {
     }
     if (loading) return <p>Loading...</p>
     if (error) return <p>Could not load applications: {error}</p>
-
+    const visible = applications.filter(
+        (app) =>
+            app.companyName.toLowerCase().includes(search.toLowerCase()) &&
+            (statusFilter === 'ALL' || app.status === statusFilter)
+    )
     return (
         <div>
             <h1>My Applications</h1>
@@ -89,12 +94,24 @@ function App() {
                 <button type="submit">Add application</button>
                 {formError && <p>{formError}</p>}
             </form>
-
+            <div>
+                <label htmlFor="search">Search</label>
+                <input id="search" value={search} onChange={(e) => setSearch(e.target.value)} />
+                <label htmlFor="filter">Filter by status</label>
+                <select id="filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                    <option value="ALL">ALL</option>
+                    {STATUSES.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                    ))}
+                </select>
+            </div>
             {applications.length === 0 ? (
                 <p>No applications yet.</p>
+            ) : visible.length === 0 ? (
+                <p>No applications match your filters.</p>
             ) : (
                 <ul>
-                    {applications.map((app) => (
+                    {visible.map((app) => (
                         <li key={app.id}>
                             {app.companyName}{' '}
                             <select
@@ -108,7 +125,6 @@ function App() {
                             <button onClick={() => handleDelete(app.id)}>Delete</button>
                         </li>
                     ))}
-
                 </ul>
             )}
         </div>
