@@ -50,6 +50,11 @@ public class PlacementService {
                 .filter(app -> app.getStudentId().equals(studentId))
                 .orElseThrow(() -> notFound("Application not found"));
         requireUsableForPlacement(application);
+        // Without this check, "no ACTIVE placement" after completion would look like
+        // "never had one" and allow a second OJT placement.
+        if (placements.existsByStudentIdAndStatus(studentId, PlacementStatus.COMPLETED)) {
+            throw conflict("You have already completed your OJT placement");
+        }
         if (requests.existsByStudentIdAndStatus(studentId, PlacementRequestStatus.PENDING)) {
             throw conflict("You already have a pending placement request");
         }
