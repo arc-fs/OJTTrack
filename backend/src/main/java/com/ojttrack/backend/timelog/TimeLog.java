@@ -157,6 +157,48 @@ public class TimeLog {
         this.status = TimeLogStatus.PENDING;
     }
 
+    // ---- coordinator review (the service checks ownership, placement status and version first) ----
+
+    /** PENDING -> VERIFIED. Only verified minutes count toward the placement's hours. */
+    public void verify(Integer coordinatorId, Instant now) {
+        requireStatus(TimeLogStatus.PENDING, "Only pending logs can be verified");
+        status = TimeLogStatus.VERIFIED;
+        verifiedBy = coordinatorId;
+        verifiedAt = now;
+    }
+
+    /** PENDING -> RETURNED with feedback the student must address. */
+    public void returnWithFeedback(String feedback) {
+        requireStatus(TimeLogStatus.PENDING, "Only pending logs can be returned");
+        status = TimeLogStatus.RETURNED;
+        this.feedback = requireText(feedback);
+    }
+
+    /**
+     * VERIFIED -> RETURNED, for a verification made by mistake. The reason is stored as
+     * the feedback the student sees; both verification fields are cleared (V5 CHECKs).
+     */
+    public void unverify(String reason) {
+        requireStatus(TimeLogStatus.VERIFIED, "Only verified logs can be un-verified");
+        status = TimeLogStatus.RETURNED;
+        feedback = requireText(reason);
+        verifiedBy = null;
+        verifiedAt = null;
+    }
+
+    private void requireStatus(TimeLogStatus expected, String message) {
+        if (status != expected) {
+            throw new IllegalStateException(message);
+        }
+    }
+
+    private static String requireText(String text) {
+        if (text == null || text.isBlank()) {
+            throw new IllegalArgumentException("Feedback is required");
+        }
+        return text.trim();
+    }
+
     private static void requireValidShift(LocalTime timeIn, LocalTime timeOut, boolean endsNextDay, int breakMinutes) {
         String problem = shiftProblem(timeIn, timeOut, endsNextDay, breakMinutes);
         if (problem != null) {

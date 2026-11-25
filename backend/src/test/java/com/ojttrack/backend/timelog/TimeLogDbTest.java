@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.ojttrack.backend.application.ApplicationStatus;
 import com.ojttrack.backend.application.JobApplication;
 import com.ojttrack.backend.application.JobApplicationRepository;
+import com.ojttrack.backend.config.TimeConfig;
 import com.ojttrack.backend.placement.Placement;
 import com.ojttrack.backend.placement.PlacementRepository;
 import com.ojttrack.backend.placement.PlacementRequest;
@@ -21,6 +22,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -37,6 +39,7 @@ import org.springframework.test.context.ActiveProfiles;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("dbtest")
+@Import({TimeLogService.class, TimeLogReviewService.class, TimeConfig.class})
 class TimeLogDbTest {
 
     static final LocalDate DAY = LocalDate.of(2027, 1, 6);
@@ -46,6 +49,8 @@ class TimeLogDbTest {
     @Autowired PlacementRepository placements;
     @Autowired PlacementRequestRepository requests;
     @Autowired TimeLogRepository logs;
+    @Autowired TimeLogService studentService;
+    @Autowired TimeLogReviewService reviewService;
     @Autowired EntityManager em;
 
     AppUser coordinator;
@@ -172,7 +177,97 @@ class TimeLogDbTest {
                         + " WHERE id = " + request.getId()).executeUpdate());
     }
 
+    // ---- review workflow through the real services (every state must satisfy the V5 CHECKs) ----
+
+    @Test
+    void verifyThenUnverifyStoresTheReasonAndClearsVerification() {
+        TimeLog saved = logs.saveAndFlush(log(DAY, "08:00", "17:00", false, 60));
+
+        reviewService.verify(coordinator.getId(), saved.getId(), saved.getVersion());
+        TimeLog verified = reload(saved.getId());
+        assertThat(verified.getStatus()).isEqualTo(TimeLogStatus.VERIFIED);
+        assertThat(verified.getVerifiedBy()).isEqualTo(coordinator.getId());
+        assertThat(verified.getVerifiedAt()).isNotNull();
+
+        reviewService.unverify(coordinator.getId(), saved.getId(), verified.getVersion(), "  Wrong time out  ");
+        TimeLog returned = reload(saved.getId());
+        assertThat(returned.getStatus()).isEqualTo(TimeLogStatus.RETURNED);
+        assertThat(returned.getFeedback()).isEqualTo("Wrong time out");
+        assertThat(returned.getVerifiedBy()).isNull();
+        assertThat(returned.getVerifiedAt()).isNull();
+    }
+
+    @Test
+    void returnedLogShowsFeedbackToTheStudent() {
+        TimeLog saved = logs.saveAndFlush(log(DAY, "08:00", "17:00", false, 60));
+
+        reviewService.returnLog(coordinator.getId(), saved.getId(), saved.getVersion(), "Add your tasks");
+        em.flush();
+        em.clear();
+
+        assertThat(studentService.list(student.getId(), null))
+                .singleElement()
+                .satisfies(l -> {
+                    assertThat(l.status()).isEqualTo(TimeLogStatus.RETURNED);
+                    assertThat(l.feedback()).isEqualTo("Add your tasks");
+                });
+    }
+
+    @Test
+    void completionRecordsTheCoordinator() {
+        Placement small = switchToNewPlacement(8);   // 8 required hours = 480 min
+        TimeLog saved = logs.saveAndFlush(TimeLog.submit(small.getId(), student.getId(), DAY,
+                LocalTime.parse("08:00"), LocalTime.parse("16:00"), false, 0, "work"));
+        reviewService.verify(coordinator.getId(), saved.getId(), saved.getVersion());
+
+        reviewService.complete(coordinator.getId(), small.getId());
+        em.flush();
+        em.clear();
+
+        Placement completed = placements.findById(small.getId()).orElseThrow();
+        assertThat(completed.getStatus()).isEqualTo(com.ojttrack.backend.placement.PlacementStatus.COMPLETED);
+        assertThat(completed.getCompletedBy()).isEqualTo(coordinator.getId());
+        assertThat(completed.getEndedAt()).isNotNull();
+    }
+
+    @Test
+    void previousPlacementHoursNeverCountTowardTheNewPlacement() {
+        TimeLog old = logs.saveAndFlush(log(DAY, "08:00", "17:00", false, 60));
+        reviewService.verify(coordinator.getId(), old.getId(), old.getVersion());
+        Integer oldPlacementId = placement.getId();
+
+        switchToNewPlacement(486);
+        em.flush();
+        em.clear();
+
+        TimeLogSummaryResponse current = studentService.summary(student.getId(), null);
+        assertThat(current.verifiedMinutes()).isZero();
+        assertThat(current.remainingMinutes()).isEqualTo(486 * 60);
+
+        // ...while the old placement keeps its history
+        assertThat(studentService.summary(student.getId(), oldPlacementId).verifiedMinutes()).isEqualTo(480);
+    }
+
     // ---- helpers ----
+
+    /** Terminates the current placement and activates a new one, as an approved transfer does. */
+    private Placement switchToNewPlacement(int requiredHours) {
+        placement.terminate();
+        placements.saveAndFlush(placement);
+        JobApplication app = BeanUtils.instantiateClass(JobApplication.class);
+        app.setStudentId(student.getId());
+        app.setCompanyName("Beta Corp");
+        app.setStatus(ApplicationStatus.ACCEPTED);
+        applications.saveAndFlush(app);
+        return placements.saveAndFlush(Placement.activate(app.getId(), student.getId(),
+                LocalDate.of(2027, 1, 4), LocalDate.of(2027, 4, 30), requiredHours));
+    }
+
+    private TimeLog reload(Integer id) {
+        em.flush();
+        em.clear();
+        return logs.findById(id).orElseThrow();
+    }
 
     private TimeLog log(LocalDate date, String in, String out, boolean nextDay, int breakMinutes) {
         return TimeLog.submit(placement.getId(), student.getId(), date,
