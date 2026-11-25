@@ -8,14 +8,19 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.ojttrack.backend.TestUsers;
 import com.ojttrack.backend.config.PasswordConfig;
 import com.ojttrack.backend.config.SecurityConfig;
+import com.ojttrack.backend.placement.PlacementRepository;
+import com.ojttrack.backend.placement.PlacementRequestRepository;
+import com.ojttrack.backend.placement.PlacementRequestStatus;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -40,6 +45,64 @@ class JobApplicationControllerTest {
 
     @MockitoBean
     JobApplicationRepository repository;
+
+    @MockitoBean
+    PlacementRepository placements;
+
+    @MockitoBean
+    PlacementRequestRepository placementRequests;
+
+    // ---- applications linked to placements are locked ----
+
+    private static final String UPDATE_BODY = "{\"companyName\":\"Acme\",\"status\":\"REJECTED\"}";
+
+    @Test
+    void updateOfUnlinkedApplicationSucceeds() throws Exception {
+        when(repository.findByIdForUpdate(40)).thenReturn(Optional.of(application(5, "Acme")));
+        when(repository.save(any(JobApplication.class))).thenAnswer(call -> call.getArgument(0));
+
+        mvc.perform(put("/api/applications/40")
+                        .with(user(TestUsers.student(5))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(UPDATE_BODY))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("REJECTED"));
+    }
+
+    @Test
+    void updateOfApplicationWithPlacementIsAConflict() throws Exception {
+        when(repository.findByIdForUpdate(40)).thenReturn(Optional.of(application(5, "Acme")));
+        when(placements.existsByApplicationId(40)).thenReturn(true);
+
+        mvc.perform(put("/api/applications/40")
+                        .with(user(TestUsers.student(5))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(UPDATE_BODY))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail", containsString("linked to a placement")));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void deleteOfApplicationWithPendingRequestIsAConflict() throws Exception {
+        when(repository.findByIdForUpdate(40)).thenReturn(Optional.of(application(5, "Acme")));
+        when(placementRequests.existsByApplicationIdAndStatus(40, PlacementRequestStatus.PENDING)).thenReturn(true);
+
+        mvc.perform(delete("/api/applications/40").with(user(TestUsers.student(5))).with(csrf()))
+                .andExpect(status().isConflict());
+        verify(repository, never()).delete(any());
+    }
+
+    @Test
+    void updateOfAnotherStudentsApplicationIsNotFound() throws Exception {
+        when(repository.findByIdForUpdate(40)).thenReturn(Optional.of(application(99, "Acme")));
+
+        mvc.perform(put("/api/applications/40")
+                        .with(user(TestUsers.student(5))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(UPDATE_BODY))
+                .andExpect(status().isNotFound());
+        verify(repository, never()).save(any());
+    }
+
+    // ---- existing behaviour ----
 
     @Test
     void listRequiresLogin() throws Exception {
