@@ -28,6 +28,19 @@ async function csrfToken() {
     return token
 }
 
+// The backend returns errors as Problem Details JSON: { "status": 400, "detail": "..." }.
+// Use its "detail" when there is one; some responses (e.g. 401/403 from Spring
+// Security) have no body, so fall back to the status code.
+async function errorMessage(res) {
+    try {
+        const problem = await res.json()
+        if (problem && problem.detail) return problem.detail
+    } catch {
+        // no JSON body
+    }
+    return 'Request failed (status ' + res.status + ')'
+}
+
 export async function apiFetch(url, { method = 'GET', headers = {}, body } = {}) {
     const finalHeaders = { ...headers }
     if (!SAFE_METHODS.includes(method)) {
@@ -37,7 +50,7 @@ export async function apiFetch(url, { method = 'GET', headers = {}, body } = {})
 
     const res = await fetch(url, { method, headers: finalHeaders, body })
     if (!res.ok) {
-        throw new ApiError(res.status, 'Request failed (status ' + res.status + ')')
+        throw new ApiError(res.status, await errorMessage(res))
     }
     // Some endpoints (204 responses, login) return no JSON body.
     const contentType = res.headers.get('Content-Type') || ''

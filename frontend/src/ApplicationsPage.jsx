@@ -23,7 +23,12 @@ function ApplicationsPage() {
     function handleSubmit(event) {
         event.preventDefault()
         setFormError(null)
-        apiJson('/api/applications', 'POST', { companyName, status })
+        const trimmed = companyName.trim()
+        if (!trimmed) {
+            setFormError('Please enter a company name.')
+            return
+        }
+        apiJson('/api/applications', 'POST', { companyName: trimmed, status })
             .then((saved) => {
                 setApplications((prev) => [...prev, saved])
                 setCompanyName('')
@@ -61,6 +66,7 @@ function ApplicationsPage() {
                 <label htmlFor="company">Company name</label>
                 <input
                     id="company"
+                    maxLength={200}
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
                 />
