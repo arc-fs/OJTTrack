@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react'
 import { apiFetch, apiJson } from './api.js'
+import StudentPlacement from './StudentPlacement.jsx'
 
 const STATUSES = ['PLANNED', 'APPLIED', 'INTERVIEW', 'OFFERED', 'ACCEPTED', 'REJECTED', 'WITHDRAWN']
 
 function ApplicationsPage() {
+    // This page owns all student data so the placement section and the application
+    // list always agree (e.g. which applications are locked).
     const [applications, setApplications] = useState([])
+    const [placements, setPlacements] = useState([])
+    const [requests, setRequests] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [search, setSearch] = useState('')
@@ -14,11 +19,33 @@ function ApplicationsPage() {
     const [formError, setFormError] = useState(null)
 
     useEffect(() => {
-        apiFetch('/api/applications')
-            .then((data) => setApplications(data))
+        Promise.all([
+            apiFetch('/api/applications'),
+            apiFetch('/api/placements'),
+            apiFetch('/api/placement-requests'),
+        ])
+            .then(([apps, places, reqs]) => {
+                setApplications(apps)
+                setPlacements(places)
+                setRequests(reqs)
+            })
             .catch((err) => setError(err.message))
             .finally(() => setLoading(false))
     }, [])
+
+    // Applications behind a placement (current or past) or a pending request can't be
+    // edited (the server returns 409). Map each locked application id to the reason shown.
+    const lockReasons = new Map()
+    for (const r of requests) {
+        if (r.status === 'PENDING') lockReasons.set(r.applicationId, 'request pending')
+    }
+    for (const p of placements) {
+        lockReasons.set(p.applicationId, p.status === 'ACTIVE' ? 'current placement' : 'past placement')
+    }
+
+    function handleRequestSubmitted(created) {
+        setRequests((prev) => [created, ...prev])
+    }
 
     function handleSubmit(event) {
         event.preventDefault()
@@ -52,7 +79,7 @@ function ApplicationsPage() {
     }
 
     if (loading) return <p>Loading...</p>
-    if (error) return <p>Could not load applications: {error}</p>
+    if (error) return <p>Could not load your data: {error}</p>
     const visible = applications.filter(
         (app) =>
             app.companyName.toLowerCase().includes(search.toLowerCase()) &&
@@ -60,6 +87,13 @@ function ApplicationsPage() {
     )
     return (
         <div>
+            <StudentPlacement
+                applications={applications}
+                placements={placements}
+                requests={requests}
+                onSubmitted={handleRequestSubmitted}
+            />
+
             <h1>My Applications</h1>
 
             <form onSubmit={handleSubmit}>
@@ -96,20 +130,27 @@ function ApplicationsPage() {
                 <p>No applications match your filters.</p>
             ) : (
                 <ul>
-                    {visible.map((app) => (
-                        <li key={app.id}>
-                            {app.companyName}{' '}
-                            <select
-                                value={app.status}
-                                onChange={(e) => handleStatusChange(app, e.target.value)}
-                            >
-                                {STATUSES.map((s) => (
-                                    <option key={s} value={s}>{s}</option>
-                                ))}
-                            </select>
-                            <button onClick={() => handleDelete(app.id)}>Delete</button>
-                        </li>
-                    ))}
+                    {visible.map((app) => {
+                        const lockReason = lockReasons.get(app.id)
+                        const locked = lockReason !== undefined
+                        return (
+                            <li key={app.id}>
+                                {app.companyName}{' '}
+                                <select
+                                    value={app.status}
+                                    disabled={locked}
+                                    aria-label={'Status of ' + app.companyName}
+                                    onChange={(e) => handleStatusChange(app, e.target.value)}
+                                >
+                                    {STATUSES.map((s) => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
+                                <button disabled={locked} onClick={() => handleDelete(app.id)}>Delete</button>
+                                {locked && <span> (Locked: {lockReason})</span>}
+                            </li>
+                        )
+                    })}
                 </ul>
             )}
         </div>
