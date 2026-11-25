@@ -120,6 +120,19 @@ public class TimeLogService {
                 .toList();
     }
 
+    /**
+     * Progress of one of the student's placements (default: the ACTIVE one). Only that
+     * placement's logs count, so hours from a terminated placement never carry over.
+     */
+    @Transactional(readOnly = true)
+    public TimeLogSummaryResponse summary(Integer studentId, Integer placementId) {
+        Placement placement = (placementId == null
+                ? placements.findByStudentIdAndStatus(studentId, PlacementStatus.ACTIVE)
+                : placements.findById(placementId).filter(p -> p.getStudentId().equals(studentId)))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Placement not found"));
+        return TimeLogSummaryResponse.of(placement, logs.findByPlacementIdOrderByLogDateDesc(placement.getId()));
+    }
+
     /** Shift rules (shared with the database CHECKs) plus the date rules that need the clock. */
     private void validate(TimeLogRequest request, Placement placement) {
         String problem = TimeLog.shiftProblem(request.timeIn(), request.timeOut(),

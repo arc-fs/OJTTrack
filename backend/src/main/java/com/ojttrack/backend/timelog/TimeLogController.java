@@ -24,6 +24,12 @@ public class TimeLogController {
         return service.list(student.getId(), placementId);
     }
 
+    @GetMapping("/summary")
+    public TimeLogSummaryResponse summary(@RequestParam(required = false) Integer placementId,
+                                          @AuthenticationPrincipal AppUserDetails student) {
+        return service.summary(student.getId(), placementId);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public TimeLogResponse submit(@Valid @RequestBody TimeLogRequest body,

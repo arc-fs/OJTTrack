@@ -43,6 +43,10 @@ public class Placement {
     @Column(name = "ended_at")
     private Instant endedAt;
 
+    // The coordinator who confirmed completion; set exactly when COMPLETED (V5 CHECK).
+    @Column(name = "completed_by")
+    private Integer completedBy;
+
     protected Placement() {}   // JPA needs this
 
     public static Placement activate(Integer applicationId, Integer studentId,
@@ -66,6 +70,20 @@ public class Placement {
         endedAt = Instant.now();
     }
 
+    /**
+     * The coordinator confirms the OJT is finished. Never automatic: the caller has
+     * already checked the verified hours and that no logs are still pending.
+     */
+    public void complete(Integer coordinatorId) {
+        if (status != PlacementStatus.ACTIVE) {
+            throw new IllegalStateException("Only an ACTIVE placement can be completed");
+        }
+        status = PlacementStatus.COMPLETED;
+        endedAt = Instant.now();
+        completedBy = coordinatorId;
+    }
+
+    public Integer getCompletedBy() { return completedBy; }
     public Integer getId() { return id; }
     public Integer getApplicationId() { return applicationId; }
     public Integer getStudentId() { return studentId; }

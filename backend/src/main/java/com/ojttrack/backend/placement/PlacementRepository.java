@@ -22,6 +22,16 @@ public interface PlacementRepository extends JpaRepository<Placement, Integer> {
 
     boolean existsByStudentIdAndStatus(Integer studentId, PlacementStatus status);
 
+    /** Placements with the given status belonging to this coordinator's students. */
+    @Query("""
+            select p from Placement p
+            where p.status = :status
+              and p.studentId in (select u.id from AppUser u where u.coordinatorId = :coordinatorId)
+            order by p.startDate, p.id
+            """)
+    List<Placement> findForCoordinator(@Param("coordinatorId") Integer coordinatorId,
+                                       @Param("status") PlacementStatus status);
+
     /**
      * Locks the placement row (SELECT ... FOR UPDATE). Every operation that changes a
      * placement's logs or status takes this lock first, so they run one at a time per
