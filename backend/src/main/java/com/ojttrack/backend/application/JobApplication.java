@@ -24,7 +24,16 @@ public class JobApplication {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt = Instant.now();
+
     protected JobApplication() {}   // JPA needs a no-argument constructor
+
+    // Called by JPA just before an UPDATE is sent to the database.
+    @PreUpdate
+    void onUpdate() {
+        updatedAt = Instant.now();
+    }
 
     public Integer getId() { return id; }
 
@@ -38,4 +47,6 @@ public class JobApplication {
     public void setStatus(ApplicationStatus status) { this.status = status; }
 
     public Instant getCreatedAt() { return createdAt; }
+
+    public Instant getUpdatedAt() { return updatedAt; }
 }
