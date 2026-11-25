@@ -21,6 +21,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/health", "/api/auth/csrf").permitAll()
                         .requestMatchers("/api/applications", "/api/applications/**").hasRole("STUDENT")
+                        .requestMatchers("/api/placements", "/api/placements/**",
+                                "/api/placement-requests", "/api/placement-requests/**").hasRole("STUDENT")
                         .requestMatchers("/api/coordinator/**").hasRole("COORDINATOR")
                         .anyRequest().authenticated()
                 )
