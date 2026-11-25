@@ -1,8 +1,6 @@
 package com.ojttrack.backend.user;
 
 import java.util.Optional;
-
-import jakarta.validation.constraints.Email;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AppUserRepository extends JpaRepository<AppUser, Integer> {
