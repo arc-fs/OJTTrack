@@ -84,6 +84,15 @@ class PlacementServiceTest {
     }
 
     @Test
+    void submitRejectedAfterACompletedPlacement() {
+        givenApplication(100, STUDENT, ApplicationStatus.ACCEPTED);
+        when(placements.existsByStudentIdAndStatus(STUDENT, PlacementStatus.COMPLETED)).thenReturn(true);
+
+        assertStatus(() -> service.submit(STUDENT, 100, null), HttpStatus.CONFLICT);
+        verify(requests, never()).save(any());
+    }
+
+    @Test
     void submitRejectsSecondPendingRequest() {
         givenApplication(100, STUDENT, ApplicationStatus.ACCEPTED);
         when(requests.existsByStudentIdAndStatus(STUDENT, PlacementRequestStatus.PENDING)).thenReturn(true);
