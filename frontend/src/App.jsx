@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getCurrentUser, logout } from './api.js'
 import ApplicationsPage from './ApplicationsPage.jsx'
+import CoordinatorPage from './CoordinatorPage.jsx'
 import Login from './Login.jsx'
 
 function App() {
@@ -42,11 +43,7 @@ function App() {
                 <span>Signed in as {user.fullName} ({user.email})</span>{' '}
                 <button onClick={handleLogout}>Log out</button>
             </header>
-            {user.role === 'STUDENT' ? (
-                <ApplicationsPage />
-            ) : (
-                <p>The coordinator dashboard has not been built yet.</p>
-            )}
+            {user.role === 'STUDENT' ? <ApplicationsPage /> : <CoordinatorPage />}
         </div>
     )
 }
