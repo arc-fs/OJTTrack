@@ -44,8 +44,7 @@ public class CoordinatorSeeder implements ApplicationRunner {
             return;
         }
         String normalizedEmail = email.trim().toLowerCase();
-        users.save(new AppUser(normalizedEmail, encoder.encode(password),
-                "Dev Coordinator", Role.COORDINATOR));
+        users.save(AppUser.coordinator(normalizedEmail, encoder.encode(password), "Dev Coordinator"));
         log.info("CoordinatorSeeder: created coordinator account {}", normalizedEmail);
     }
 }
