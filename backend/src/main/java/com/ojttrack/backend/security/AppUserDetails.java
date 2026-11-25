@@ -13,16 +13,19 @@ public class AppUserDetails implements UserDetails {
     private final Integer id;
     private final String email;
     private final String passwordHash;
+    private final String fullName;
     private final Role role;
 
     public AppUserDetails(AppUser user) {
         this.id = user.getId();
         this.email = user.getEmail();
         this.passwordHash = user.getPasswordHash();
+        this.fullName = user.getFullName();
         this.role = user.getRole();
     }
 
     public Integer getId() { return id; }
+    public String getFullName() { return fullName; }
     public Role getRole() { return role; }
 
     @Override

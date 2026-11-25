@@ -15,7 +15,7 @@ public class AuthController {
 
     @GetMapping("/me")
     public MeResponse me(@AuthenticationPrincipal AppUserDetails user) {
-        return new MeResponse(user.getId(), user.getUsername(), user.getRole().name());
+        return new MeResponse(user.getId(), user.getUsername(), user.getFullName(), user.getRole().name());
     }
 
     /**

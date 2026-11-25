@@ -19,34 +19,36 @@ public class JobApplicationController {
     }
 
     @GetMapping
-    public List<JobApplication> list(@AuthenticationPrincipal AppUserDetails user) {
-        return repository.findByStudentId(user.getId());
+    public List<ApplicationResponse> list(@AuthenticationPrincipal AppUserDetails user) {
+        return repository.findByStudentId(user.getId()).stream()
+                .map(ApplicationResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}")
-    public JobApplication get(@PathVariable Integer id, @AuthenticationPrincipal AppUserDetails user) {
-        return findOwned(id, user.getId());
+    public ApplicationResponse get(@PathVariable Integer id, @AuthenticationPrincipal AppUserDetails user) {
+        return ApplicationResponse.from(findOwned(id, user.getId()));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public JobApplication create(@Valid @RequestBody CreateApplicationRequest request,
-                                 @AuthenticationPrincipal AppUserDetails user) {
+    public ApplicationResponse create(@Valid @RequestBody CreateApplicationRequest request,
+                                      @AuthenticationPrincipal AppUserDetails user) {
         JobApplication application = new JobApplication();
         application.setStudentId(user.getId());
-        application.setCompanyName(request.companyName());
+        application.setCompanyName(request.companyName().trim());
         application.setStatus(request.status());
-        return repository.save(application);
+        return ApplicationResponse.from(repository.save(application));
     }
 
     @PutMapping("/{id}")
-    public JobApplication update(@PathVariable Integer id,
-                                 @Valid @RequestBody CreateApplicationRequest request,
-                                 @AuthenticationPrincipal AppUserDetails user) {
+    public ApplicationResponse update(@PathVariable Integer id,
+                                      @Valid @RequestBody CreateApplicationRequest request,
+                                      @AuthenticationPrincipal AppUserDetails user) {
         JobApplication application = findOwned(id, user.getId());
-        application.setCompanyName(request.companyName());
+        application.setCompanyName(request.companyName().trim());
         application.setStatus(request.status());
-        return repository.save(application);
+        return ApplicationResponse.from(repository.save(application));
     }
 
     @DeleteMapping("/{id}")

@@ -39,7 +39,7 @@ function App() {
     return (
         <div>
             <header>
-                <span>Signed in as {user.email}</span>{' '}
+                <span>Signed in as {user.fullName} ({user.email})</span>{' '}
                 <button onClick={handleLogout}>Log out</button>
             </header>
             {user.role === 'STUDENT' ? (
