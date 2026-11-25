@@ -1,17 +1,16 @@
 package com.ojttrack.backend.application;
 
+import com.ojttrack.backend.security.AppUserDetails;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/applications")
 public class JobApplicationController {
-
-    // TEMPORARY: replaced by the logged-in user's id when authentication is added
-    private static final int DEV_STUDENT_ID = 1;
 
     private final JobApplicationRepository repository;
 
@@ -20,24 +19,21 @@ public class JobApplicationController {
     }
 
     @GetMapping
-    public List<JobApplication> list() {
-        return repository.findByStudentId(DEV_STUDENT_ID);
-    }
-    @GetMapping("/{id}")
-    public JobApplication get(@PathVariable Integer id) {
-            return findOwned(id);
-    }
-    private JobApplication findOwned(Integer id) {
-        return repository.findByIdAndStudentId(id, DEV_STUDENT_ID)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
+    public List<JobApplication> list(@AuthenticationPrincipal AppUserDetails user) {
+        return repository.findByStudentId(user.getId());
     }
 
+    @GetMapping("/{id}")
+    public JobApplication get(@PathVariable Integer id, @AuthenticationPrincipal AppUserDetails user) {
+        return findOwned(id, user.getId());
+    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public JobApplication create(@Valid @RequestBody CreateApplicationRequest request) {
+    public JobApplication create(@Valid @RequestBody CreateApplicationRequest request,
+                                 @AuthenticationPrincipal AppUserDetails user) {
         JobApplication application = new JobApplication();
-        application.setStudentId(DEV_STUDENT_ID);
+        application.setStudentId(user.getId());
         application.setCompanyName(request.companyName());
         application.setStatus(request.status());
         return repository.save(application);
@@ -45,16 +41,23 @@ public class JobApplicationController {
 
     @PutMapping("/{id}")
     public JobApplication update(@PathVariable Integer id,
-                                 @Valid @RequestBody CreateApplicationRequest request) {
-        JobApplication application = findOwned(id);
+                                 @Valid @RequestBody CreateApplicationRequest request,
+                                 @AuthenticationPrincipal AppUserDetails user) {
+        JobApplication application = findOwned(id, user.getId());
         application.setCompanyName(request.companyName());
         application.setStatus(request.status());
         return repository.save(application);
     }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Integer id) {
-        JobApplication application = findOwned(id);
+    public void delete(@PathVariable Integer id, @AuthenticationPrincipal AppUserDetails user) {
+        JobApplication application = findOwned(id, user.getId());
         repository.delete(application);
+    }
+
+    private JobApplication findOwned(Integer id, Integer studentId) {
+        return repository.findByIdAndStudentId(id, studentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
     }
 }

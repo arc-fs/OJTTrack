@@ -19,7 +19,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.spa())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/health").permitAll()
+                        .requestMatchers("/api/health", "/api/auth/csrf").permitAll()
+                        .requestMatchers("/api/applications", "/api/applications/**").hasRole("STUDENT")
+                        .requestMatchers("/api/coordinator/**").hasRole("COORDINATOR")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
