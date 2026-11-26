@@ -77,7 +77,7 @@ public class TimeLogReviewService {
         // shortcut: one log query per placement; fine for one coordinator's students, batch if it gets slow
         return active.stream()
                 .map(p -> new CoordinatorPlacementResponse(
-                        p.getId(), students.get(p.getStudentId()), companies.get(p.getApplicationId()),
+                        p.getId(), p.getStudentId(), students.get(p.getStudentId()), companies.get(p.getApplicationId()),
                         p.getStartDate(), p.getEndDate(), p.getRequiredHours(),
                         TimeLogSummaryResponse.of(p, logs.findByPlacementIdOrderByLogDateDesc(p.getId()))))
                 .toList();
