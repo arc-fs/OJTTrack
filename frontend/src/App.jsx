@@ -5,6 +5,7 @@ import CoordinatorPage from './CoordinatorPage.jsx'
 import Login from './Login.jsx'
 import PlacementRequests from './PlacementRequests.jsx'
 import Tabs from './Tabs.jsx'
+import TimeLogsPage from './TimeLogsPage.jsx'
 
 function App() {
     // undefined = still checking the session, null = logged out, object = logged in
@@ -54,6 +55,7 @@ function App() {
 // ApplicationsPage contains the placement section on purpose: the two share state
 // (which applications are locked), so they stay together in one tab.
 const STUDENT_TABS = [
+    { id: 'time-logs', label: 'Time logs', render: (active) => <TimeLogsPage active={active} /> },
     { id: 'applications', label: 'Applications & placement', render: () => <ApplicationsPage /> },
 ]
 
