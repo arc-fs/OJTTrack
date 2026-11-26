@@ -203,6 +203,7 @@ class RequirementDbTest {
         flushAndClear();
 
         assertThat(assignments.findActiveByStudentId(student.getId())).hasSize(2);   // any owner, not archived
+        assertThat(assignments.findByStudentId(student.getId())).hasSize(3);         // "Show archived": all of them
         assertThat(assignments.findActiveForCoordinator(coordinator.getId(), List.of(student.getId())))
                 .extracting(RequirementAssignment::getId).containsExactly(activeId);
         assertThat(assignments.countActiveSubmittedForCoordinator(coordinator.getId())).isEqualTo(1);

@@ -72,6 +72,21 @@ class RequirementControllersTest {
         verify(management, never()).create(any(), any());
     }
 
+    @Test
+    void showArchivedIsPassedThrough() throws Exception {
+        mvc.perform(get("/api/requirements?includeArchived=true").with(user(TestUsers.student(10))))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/requirements").with(user(TestUsers.student(10)))).andExpect(status().isOk());
+        mvc.perform(get("/api/coordinator/requirements?includeArchived=true").with(user(TestUsers.coordinator(1))))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/coordinator/requirements").with(user(TestUsers.coordinator(1)))).andExpect(status().isOk());
+
+        verify(students).list(10, true);
+        verify(students).list(10, false);
+        verify(management).list(1, true);
+        verify(management).list(1, false);
+    }
+
     // ---- validation ----
 
     @ParameterizedTest

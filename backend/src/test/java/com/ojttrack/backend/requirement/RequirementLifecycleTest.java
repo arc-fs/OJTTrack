@@ -11,6 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.ojttrack.backend.TestUsers;
 import com.ojttrack.backend.user.AppUserRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -188,6 +189,31 @@ class RequirementLifecycleTest {
         assertThat(list).extracting(StudentRequirementResponse::title).containsExactly("Submit signed MOA", "Weekly report");
         assertThat(list.get(0).overdue()).isTrue();
         assertThat(list.get(1).dueSoon()).isTrue();
+    }
+
+    @Test
+    void studentCanSeeArchivedRequirementsAndTheirHistoryWhenAsked() {
+        // Default view: only the active query is used.
+        student.list(STUDENT, false);
+        verify(assignments, never()).findByStudentId(any());
+
+        Requirement waiver = archived(requirement(49, OWNER, "Old waiver", LocalDate.of(2027, 1, 10)));
+        RequirementAssignment old = assignment(69, waiver, STUDENT, AssignmentStatus.RETURNED);   // past due, but archived
+        RequirementAssignment current = assignment(70, moa, STUDENT, AssignmentStatus.SUBMITTED);
+        when(assignments.findByStudentId(STUDENT)).thenReturn(List.of(old, current));
+        when(requirements.findAllById(any())).thenReturn(List.of(waiver, moa));
+        when(events.findByAssignmentIdInOrderByCreatedAtAscIdAsc(any())).thenReturn(List.of(
+                RequirementEvent.record(old, EventAction.SUBMITTED, STUDENT, "Old note", NOW)));
+        when(users.findAllById(any())).thenReturn(List.of(TestUsers.studentEntity(STUDENT, OWNER)));
+
+        List<StudentRequirementResponse> all = student.list(STUDENT, true);
+
+        assertThat(all).extracting(StudentRequirementResponse::title).containsExactly("Submit signed MOA", "Old waiver");
+        StudentRequirementResponse archivedView = all.get(1);   // archived ones come last
+        assertThat(archivedView.archived()).isTrue();
+        assertThat(archivedView.overdue()).isFalse();
+        assertThat(archivedView.dueSoon()).isFalse();
+        assertThat(archivedView.history()).extracting(EventResponse::text).containsExactly("Old note");
     }
 
     // ---- helpers ----
