@@ -48,6 +48,7 @@ public class JobApplicationController {
         application.setStudentId(user.getId());
         application.setCompanyName(request.companyName().trim());
         application.setStatus(request.status());
+        application.setFollowUpDate(request.followUpDate());
         return ApplicationResponse.from(repository.save(application));
     }
 
@@ -61,6 +62,7 @@ public class JobApplicationController {
         JobApplication application = findOwnedEditable(id, user.getId());
         application.setCompanyName(request.companyName().trim());
         application.setStatus(request.status());
+        application.setFollowUpDate(request.followUpDate());
         return ApplicationResponse.from(repository.save(application));
     }
 

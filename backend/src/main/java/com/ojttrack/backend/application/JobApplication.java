@@ -2,6 +2,7 @@ package com.ojttrack.backend.application;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "applications")
@@ -20,6 +21,11 @@ public class JobApplication {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ApplicationStatus status;
+
+    // When the student plans to follow up (column existed since V2; mapped for the dashboard).
+    // A past date simply means the follow-up is overdue.
+    @Column(name = "follow_up_date")
+    private LocalDate followUpDate;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
@@ -45,6 +51,9 @@ public class JobApplication {
 
     public ApplicationStatus getStatus() { return status; }
     public void setStatus(ApplicationStatus status) { this.status = status; }
+
+    public LocalDate getFollowUpDate() { return followUpDate; }
+    public void setFollowUpDate(LocalDate followUpDate) { this.followUpDate = followUpDate; }
 
     public Instant getCreatedAt() { return createdAt; }
 

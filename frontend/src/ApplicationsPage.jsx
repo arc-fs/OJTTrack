@@ -16,6 +16,7 @@ function ApplicationsPage() {
     const [statusFilter, setStatusFilter] = useState('ALL')
     const [companyName, setCompanyName] = useState('')
     const [status, setStatus] = useState('PLANNED')
+    const [followUpDate, setFollowUpDate] = useState('')
     const [formError, setFormError] = useState(null)
 
     useEffect(() => {
@@ -55,12 +56,29 @@ function ApplicationsPage() {
             setFormError('Please enter a company name.')
             return
         }
-        apiJson('/api/applications', 'POST', { companyName: trimmed, status })
+        apiJson('/api/applications', 'POST', { companyName: trimmed, status, followUpDate: followUpDate || null })
             .then((saved) => {
                 setApplications((prev) => [...prev, saved])
                 setCompanyName('')
+                setFollowUpDate('')
             })
             .catch((err) => setFormError('Could not save: ' + err.message))
+    }
+
+    // PUT replaces every field, so each update sends the application's full current values;
+    // otherwise changing only the status would erase the follow-up date.
+    function updateApplication(app, changes) {
+        const body = {
+            companyName: app.companyName,
+            status: app.status,
+            followUpDate: app.followUpDate ?? null,
+            ...changes,
+        }
+        apiJson('/api/applications/' + app.id, 'PUT', body)
+            .then((updated) => {
+                setApplications((prev) => prev.map((a) => (a.id === updated.id ? updated : a)))
+            })
+            .catch((err) => setFormError('Could not update: ' + err.message))
     }
 
     function handleDelete(id) {
@@ -71,11 +89,11 @@ function ApplicationsPage() {
     }
 
     function handleStatusChange(app, newStatus) {
-        apiJson('/api/applications/' + app.id, 'PUT', { companyName: app.companyName, status: newStatus })
-            .then((updated) => {
-                setApplications((prev) => prev.map((a) => (a.id === updated.id ? updated : a)))
-            })
-            .catch((err) => setFormError('Could not update: ' + err.message))
+        updateApplication(app, { status: newStatus })
+    }
+
+    function handleFollowUpChange(app, newDate) {
+        updateApplication(app, { followUpDate: newDate || null })
     }
 
     if (loading) return <p>Loading...</p>
@@ -110,6 +128,9 @@ function ApplicationsPage() {
                         <option key={s} value={s}>{s}</option>
                     ))}
                 </select>
+                <label htmlFor="follow-up">Follow up on (optional)</label>
+                <input id="follow-up" type="date" value={followUpDate}
+                       onChange={(e) => setFollowUpDate(e.target.value)} />
                 <button type="submit">Add application</button>
                 {formError && <p>{formError}</p>}
             </form>
@@ -145,7 +166,13 @@ function ApplicationsPage() {
                                     {STATUSES.map((s) => (
                                         <option key={s} value={s}>{s}</option>
                                     ))}
-                                </select>
+                                </select>{' '}
+                                <label>
+                                    Follow up{' '}
+                                    <input type="date" value={app.followUpDate ?? ''} disabled={locked}
+                                           aria-label={'Follow-up date for ' + app.companyName}
+                                           onChange={(e) => handleFollowUpChange(app, e.target.value)} />
+                                </label>{' '}
                                 <button disabled={locked} onClick={() => handleDelete(app.id)}>Delete</button>
                                 {locked && <span> (Locked: {lockReason})</span>}
                             </li>
