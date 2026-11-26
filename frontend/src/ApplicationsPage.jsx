@@ -18,6 +18,18 @@ function ApplicationsPage() {
     const [status, setStatus] = useState('PLANNED')
     const [followUpDate, setFollowUpDate] = useState('')
     const [formError, setFormError] = useState(null)
+    const [notice, setNotice] = useState(null)      // last success, e.g. "Added Acme."
+
+    // One message at a time: a success replaces an old error and vice versa.
+    function fail(text) {
+        setNotice(null)
+        setFormError(text)
+    }
+
+    function succeed(text) {
+        setFormError(null)
+        setNotice(text)
+    }
 
     useEffect(() => {
         Promise.all([
@@ -53,7 +65,7 @@ function ApplicationsPage() {
         setFormError(null)
         const trimmed = companyName.trim()
         if (!trimmed) {
-            setFormError('Please enter a company name.')
+            fail('Please enter a company name.')
             return
         }
         apiJson('/api/applications', 'POST', { companyName: trimmed, status, followUpDate: followUpDate || null })
@@ -61,8 +73,9 @@ function ApplicationsPage() {
                 setApplications((prev) => [...prev, saved])
                 setCompanyName('')
                 setFollowUpDate('')
+                succeed(`Added ${saved.companyName}.`)
             })
-            .catch((err) => setFormError('Could not save: ' + err.message))
+            .catch((err) => fail('Could not save: ' + err.message))
     }
 
     // PUT replaces every field, so each update sends the application's full current values;
@@ -77,15 +90,19 @@ function ApplicationsPage() {
         apiJson('/api/applications/' + app.id, 'PUT', body)
             .then((updated) => {
                 setApplications((prev) => prev.map((a) => (a.id === updated.id ? updated : a)))
+                succeed(`Updated ${updated.companyName}.`)
             })
-            .catch((err) => setFormError('Could not update: ' + err.message))
+            .catch((err) => fail('Could not update: ' + err.message))
     }
 
-    function handleDelete(id) {
+    function handleDelete(app) {
         if (!window.confirm('Delete this application?')) return
-        apiFetch('/api/applications/' + id, { method: 'DELETE' })
-            .then(() => setApplications((prev) => prev.filter((app) => app.id !== id)))
-            .catch((err) => setFormError('Could not delete: ' + err.message))
+        apiFetch('/api/applications/' + app.id, { method: 'DELETE' })
+            .then(() => {
+                setApplications((prev) => prev.filter((a) => a.id !== app.id))
+                succeed(`Deleted ${app.companyName}.`)
+            })
+            .catch((err) => fail('Could not delete: ' + err.message))
     }
 
     function handleStatusChange(app, newStatus) {
@@ -97,7 +114,7 @@ function ApplicationsPage() {
     }
 
     if (loading) return <p>Loading...</p>
-    if (error) return <p>Could not load your data: {error}</p>
+    if (error) return <p role="alert">Could not load your data: {error}</p>
     const visible = applications.filter(
         (app) =>
             app.companyName.toLowerCase().includes(search.toLowerCase()) &&
@@ -131,8 +148,9 @@ function ApplicationsPage() {
                 <label htmlFor="follow-up">Follow up on (optional)</label>
                 <input id="follow-up" type="date" value={followUpDate}
                        onChange={(e) => setFollowUpDate(e.target.value)} />
-                <button type="submit">Add application</button>
-                {formError && <p>{formError}</p>}
+                <button type="submit" data-variant="primary">Add application</button>
+                {formError && <p role="alert">{formError}</p>}
+                {notice && <p role="status">{notice}</p>}
             </form>
             <div>
                 <label htmlFor="search">Search</label>
@@ -150,13 +168,14 @@ function ApplicationsPage() {
             ) : visible.length === 0 ? (
                 <p>No applications match your filters.</p>
             ) : (
-                <ul>
+                // card-list / card-title / card-actions: spans and classes that only change phone layout
+                <ul className="card-list">
                     {visible.map((app) => {
                         const lockReason = lockReasons.get(app.id)
                         const locked = lockReason !== undefined
                         return (
                             <li key={app.id}>
-                                {app.companyName}{' '}
+                                <span className="card-title">{app.companyName}</span>{' '}
                                 <select
                                     value={app.status}
                                     disabled={locked}
@@ -173,8 +192,12 @@ function ApplicationsPage() {
                                            aria-label={'Follow-up date for ' + app.companyName}
                                            onChange={(e) => handleFollowUpChange(app, e.target.value)} />
                                 </label>{' '}
-                                <button disabled={locked} onClick={() => handleDelete(app.id)}>Delete</button>
-                                {locked && <span> (Locked: {lockReason})</span>}
+                                <span className="card-actions">
+                                    <button data-variant="danger" disabled={locked} onClick={() => handleDelete(app)}>
+                                        Delete
+                                    </button>
+                                    {locked && <span> (Locked: {lockReason})</span>}
+                                </span>
                             </li>
                         )
                     })}

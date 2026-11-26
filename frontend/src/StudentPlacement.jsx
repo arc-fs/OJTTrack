@@ -91,7 +91,7 @@ function StudentPlacement({ applications, placements, requests, onSubmitted }) {
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
                     />
-                    <button type="submit" disabled={submitting}>
+                    <button type="submit" data-variant="primary" disabled={submitting}>
                         {submitting ? 'Sending...' : active ? 'Request change' : 'Request placement'}
                     </button>
                     {active && <p>Your current placement stays active until your coordinator approves the change.</p>}

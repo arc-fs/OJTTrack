@@ -217,7 +217,7 @@ function TimeLogForm({ editLog, placementId, placements, logs, dataVersion, toda
             )}
 
             {!locked && (
-                <button type="submit" disabled={!canSave}>
+                <button type="submit" data-variant="primary" disabled={!canSave}>
                     {submitting ? 'Saving...'
                         : !isEdit ? 'Save log'
                             : (saved ?? editLog).status === 'RETURNED' ? 'Save and resubmit' : 'Save changes'}

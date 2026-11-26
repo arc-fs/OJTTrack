@@ -137,7 +137,7 @@ function CoordinatorPage() {
                     onChange={(e) => setSearchStart(e.target.value)}
                 />
                 <p>{SEARCH_START_HELP}</p>
-                <button type="submit" disabled={submitting}>
+                <button type="submit" data-variant="primary" disabled={submitting}>
                     {submitting ? 'Creating...' : 'Create student'}
                 </button>
                 {formError && <p role="alert">{formError}</p>}
@@ -155,7 +155,8 @@ function CoordinatorPage() {
                 <>
                     <p>{SEARCH_START_HELP}</p>
                     {rowMessage && <p role={rowMessage.kind}>{rowMessage.text}</p>}
-                    <table>
+                    {/* stack-table: a card per student on phones; .cell-label is shown only there */}
+                    <table className="stack-table">
                         <thead>
                             <tr>
                                 <th>Name</th>
@@ -171,9 +172,13 @@ function CoordinatorPage() {
                                 return (
                                     <tr key={s.id}>
                                         <td>{s.fullName}</td>
-                                        <td>{s.email}</td>
-                                        <td>{new Date(s.createdAt).toLocaleDateString()}</td>
+                                        <td><span className="cell-label">Email</span>{s.email}</td>
                                         <td>
+                                            <span className="cell-label">Created</span>
+                                            {new Date(s.createdAt).toLocaleDateString()}
+                                        </td>
+                                        <td className="actions">
+                                            <span className="cell-label">Placement search starts on</span>
                                             <input type="date" value={draft}
                                                    aria-label={`Placement search start for ${s.fullName}`}
                                                    onChange={(e) => setDateDrafts((prev) => ({ ...prev, [s.id]: e.target.value }))} />

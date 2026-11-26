@@ -92,7 +92,8 @@ function CoordinatorDashboard({ active, goTo }) {
             <section aria-label="All students">
                 <h2>All students</h2>
                 {students.length === 0 ? <p>No students yet. Create them in Students.</p> : (
-                    <table>
+                    // stack-table: a card per student on phones; .cell-label is shown only there
+                    <table className="stack-table">
                         <thead>
                             <tr>
                                 <th>Student</th>
@@ -105,8 +106,12 @@ function CoordinatorDashboard({ active, goTo }) {
                             {students.map((s) => (
                                 <tr key={s.studentId}>
                                     <td>{s.fullName}</td>
-                                    <td>{s.placement ? `${s.placement.companyName} (${s.placement.status})` : '—'}</td>
                                     <td>
+                                        <span className="cell-label">Placement</span>
+                                        {s.placement ? `${s.placement.companyName} (${s.placement.status})` : '—'}
+                                    </td>
+                                    <td>
+                                        <span className="cell-label">Progress</span>
                                         {s.placement ? (
                                             <>
                                                 {formatMinutes(s.placement.progress.verifiedMinutes)} of{' '}
@@ -117,7 +122,10 @@ function CoordinatorDashboard({ active, goTo }) {
                                             </>
                                         ) : '—'}
                                     </td>
-                                    <td>{s.placementSearchStartsOn ?? 'not set'}</td>
+                                    <td>
+                                        <span className="cell-label">Search starts on</span>
+                                        {s.placementSearchStartsOn ?? 'not set'}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

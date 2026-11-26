@@ -132,7 +132,8 @@ function CoordinatorRequirementsPage({ active }) {
                 {' '}Show archived
             </label>
             {requirements.length === 0 ? <p>No requirements yet.</p> : (
-                <table>
+                // stack-table: a card per requirement on phones; .cell-label is shown only there
+                <table className="stack-table">
                     <thead>
                         <tr>
                             <th>Requirement</th>
@@ -145,9 +146,12 @@ function CoordinatorRequirementsPage({ active }) {
                         {requirements.map((r) => (
                             <tr key={r.id}>
                                 <td>{r.title}{r.archived && ' (Archived)'}</td>
-                                <td>{r.dueDate ?? '—'}</td>
-                                <td>{progressText(r.progressCounts, r.archived)}</td>
+                                <td><span className="cell-label">Due</span>{r.dueDate ?? '—'}</td>
                                 <td>
+                                    <span className="cell-label">Progress</span>
+                                    {progressText(r.progressCounts, r.archived)}
+                                </td>
+                                <td className="actions">
                                     <button type="button" aria-pressed={r.id === openId}
                                             onClick={() => setOpenId(r.id === openId ? null : r.id)}>
                                         {r.id === openId ? 'Close' : 'Open'}

@@ -42,7 +42,7 @@ function App() {
         }
     }
 
-    if (error) return <p>Could not reach the server: {error}</p>
+    if (error) return <p role="alert">Could not reach the server: {error}</p>
     if (user === undefined) return <p>Loading...</p>
     if (user === null) return <Login onLoggedIn={handleLoggedIn} />
 
