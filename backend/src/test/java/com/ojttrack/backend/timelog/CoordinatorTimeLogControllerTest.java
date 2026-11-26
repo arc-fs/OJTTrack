@@ -138,6 +138,19 @@ class CoordinatorTimeLogControllerTest {
     }
 
     @Test
+    void activePlacementsIncludeTheStudentId() throws Exception {
+        when(service.activePlacements(3)).thenReturn(List.of(new CoordinatorPlacementResponse(500, 5, "Student 5", "Acme",
+                java.time.LocalDate.of(2027, 1, 4), java.time.LocalDate.of(2027, 4, 30), 486,
+                new TimeLogSummaryResponse(500, PlacementStatus.ACTIVE, 480, 29160, 0, 0, 0, 0, false,
+                        CompletionEstimate.Status.REQUIREMENT_REACHED, null, null))));
+
+        mvc.perform(get("/api/coordinator/placements").with(user(TestUsers.coordinator(3))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].studentId").value(5))
+                .andExpect(jsonPath("$[0].studentName").value("Student 5"));
+    }
+
+    @Test
     void queueUsesTheLoggedInCoordinator() throws Exception {
         when(service.pendingQueue(3)).thenReturn(List.of(
                 new ReviewQueueItem(response(TimeLogStatus.PENDING, null, null), "Student 5", "Acme")));

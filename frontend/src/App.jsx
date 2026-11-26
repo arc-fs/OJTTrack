@@ -3,11 +3,13 @@ import { getCurrentUser, logout } from './api.js'
 import ApplicationsPage from './ApplicationsPage.jsx'
 import CoordinatorDashboard from './CoordinatorDashboard.jsx'
 import CoordinatorPage from './CoordinatorPage.jsx'
+import CoordinatorRequirementsPage from './CoordinatorRequirementsPage.jsx'
 import Login from './Login.jsx'
 import PlacementRequests from './PlacementRequests.jsx'
 import ProgressPage from './ProgressPage.jsx'
 import ReviewQueue from './ReviewQueue.jsx'
 import StudentDashboard from './StudentDashboard.jsx'
+import StudentRequirementsPage from './StudentRequirementsPage.jsx'
 import Tabs from './Tabs.jsx'
 import TimeLogsPage from './TimeLogsPage.jsx'
 
@@ -61,12 +63,14 @@ function App() {
 const STUDENT_TABS = [
     { id: 'dashboard', label: 'Dashboard', render: (active, goTo) => <StudentDashboard active={active} goTo={goTo} /> },
     { id: 'time-logs', label: 'Time logs', render: (active) => <TimeLogsPage active={active} /> },
+    { id: 'requirements', label: 'Requirements', render: (active) => <StudentRequirementsPage active={active} /> },
     { id: 'applications', label: 'Applications & placement', render: () => <ApplicationsPage /> },
 ]
 
 const COORDINATOR_TABS = [
     { id: 'dashboard', label: 'Dashboard', render: (active, goTo) => <CoordinatorDashboard active={active} goTo={goTo} /> },
     { id: 'review', label: 'Review queue', render: (active) => <ReviewQueue active={active} /> },
+    { id: 'requirements', label: 'Requirements', render: (active) => <CoordinatorRequirementsPage active={active} /> },
     { id: 'progress', label: 'Progress', render: (active) => <ProgressPage active={active} /> },
     { id: 'requests', label: 'Placement requests', render: () => <PlacementRequests /> },
     { id: 'students', label: 'Students', render: () => <CoordinatorPage /> },

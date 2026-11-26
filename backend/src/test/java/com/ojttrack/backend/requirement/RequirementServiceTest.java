@@ -150,9 +150,18 @@ class RequirementServiceTest {
     @Test
     void archivedRequirementsStayViewable() {
         archived(moa);
-        when(assignments.findByRequirementId(50)).thenReturn(List.of(assignment(70, moa, 10, AssignmentStatus.CONFIRMED)));
+        ReflectionTestUtils.setField(moa, "dueDate", LocalDate.of(2027, 1, 10));   // past due: overdue if it were active
+        RequirementAssignment returned = assignment(70, moa, 10, AssignmentStatus.RETURNED);
+        when(assignments.findByRequirementId(50)).thenReturn(List.of(returned));
+        when(events.findByAssignmentIdInOrderByCreatedAtAscIdAsc(org.mockito.ArgumentMatchers.anyCollection()))
+                .thenReturn(List.of(RequirementEvent.record(returned, EventAction.RETURNED, OWNER, "Please fix",
+                        Instant.parse("2027-01-06T00:00:00Z"))));
 
-        assertThat(service.assignments(OWNER, 50)).hasSize(1);
+        List<AssignmentResponse> rows = service.assignments(OWNER, 50);
+
+        assertThat(rows).hasSize(1);
+        assertThat(rows.get(0).overdue()).isFalse();   // archived: never overdue
+        assertThat(rows.get(0).history()).extracting(EventResponse::text).containsExactly("Please fix");
     }
 
     @Test

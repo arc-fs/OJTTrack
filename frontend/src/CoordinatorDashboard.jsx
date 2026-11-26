@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiFetch } from './api.js'
 import { formatMinutes } from './format.js'
+import { statusLabel } from './requirements.js'
 
 /**
  * Coordinator Dashboard tab (MVP §4.6). The server computes the totals and the
@@ -45,6 +46,12 @@ function CoordinatorDashboard({ active, goTo }) {
                         <button type="button" onClick={() => goTo('review')}>Open review queue</button>
                     )}
                 </p>
+                <p>
+                    {totals.requirementsAwaitingReview} requirement submission(s) awaiting review{' '}
+                    {totals.requirementsAwaitingReview > 0 && (
+                        <button type="button" onClick={() => goTo('requirements')}>Open Requirements</button>
+                    )}
+                </p>
             </section>
 
             <section aria-label="Needs attention">
@@ -56,7 +63,20 @@ function CoordinatorDashboard({ active, goTo }) {
                                 <strong>{s.fullName}</strong>
                                 {s.placement && <> · {s.placement.companyName}</>}
                                 <ul>
-                                    {s.flags.map((flag) => <li key={flag.code}>{flag.message}</li>)}
+                                    {s.flags.map((flag) => (
+                                        <li key={flag.code}>
+                                            {flag.message}
+                                            {flag.code === 'OVERDUE_REQUIREMENTS' && (
+                                                <ul>
+                                                    {s.overdueRequirements.map((r) => (
+                                                        <li key={r.requirementId}>
+                                                            {r.title}: due {r.dueDate} ({statusLabel(r.status)})
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </li>
+                                    ))}
                                 </ul>
                             </li>
                         ))}
