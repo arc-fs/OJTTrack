@@ -17,6 +17,11 @@ import com.ojttrack.backend.placement.PlacementRepository;
 import com.ojttrack.backend.placement.PlacementRequest;
 import com.ojttrack.backend.placement.PlacementRequestRepository;
 import com.ojttrack.backend.placement.PlacementStatus;
+import com.ojttrack.backend.requirement.AssignmentStatus;
+import com.ojttrack.backend.requirement.Requirement;
+import com.ojttrack.backend.requirement.RequirementAssignmentRepository;
+import com.ojttrack.backend.requirement.RequirementFixtures;
+import com.ojttrack.backend.requirement.RequirementRepository;
 import com.ojttrack.backend.timelog.TimeLogRepository;
 import com.ojttrack.backend.timelog.TimeLogStatus;
 import com.ojttrack.backend.user.AppUser;
@@ -51,12 +56,15 @@ class DashboardServiceTest {
     @Mock PlacementRequestRepository requests;
     @Mock TimeLogRepository logs;
     @Mock AppUserRepository users;
+    @Mock RequirementRepository requirementRepo;
+    @Mock RequirementAssignmentRepository requirementAssignments;
 
     DashboardService service;
 
     @BeforeEach
     void setUp() {
-        service = new DashboardService(applications, placements, requests, logs, users, CLOCK);
+        service = new DashboardService(applications, placements, requests, logs, users,
+                requirementRepo, requirementAssignments, CLOCK);
     }
 
     // ---- student dashboard ----
@@ -181,6 +189,61 @@ class DashboardServiceTest {
 
         assertThat(dashboard.students()).isEmpty();
         assertThat(dashboard.totals().students()).isZero();
+    }
+
+    // ---- requirements (§4.7) ----
+
+    @Test
+    void studentDashboardListsOverdueDueSoonAndReturnedRequirements() {
+        Requirement overdue = RequirementFixtures.requirement(50, 1, "Submit signed MOA", TODAY.minusDays(2));
+        Requirement soon = RequirementFixtures.requirement(51, 1, "Weekly report", TODAY.plusDays(3));
+        Requirement waiting = RequirementFixtures.requirement(52, 1, "Insurance form", TODAY.minusDays(5));
+        when(requirementAssignments.findActiveByStudentId(STUDENT)).thenReturn(List.of(
+                RequirementFixtures.assignment(70, overdue, STUDENT, AssignmentStatus.RETURNED),
+                RequirementFixtures.assignment(71, soon, STUDENT, AssignmentStatus.NOT_STARTED),
+                RequirementFixtures.assignment(72, waiting, STUDENT, AssignmentStatus.SUBMITTED)));   // never overdue
+        when(requirementRepo.findAllById(anyCollection())).thenReturn(List.of(overdue, soon, waiting));
+
+        StudentDashboardResponse.Requirements section = service.studentDashboard(STUDENT).requirements();
+
+        assertThat(section.overdue()).extracting(StudentDashboardResponse.RequirementItem::title)
+                .containsExactly("Submit signed MOA");
+        assertThat(section.dueSoon()).extracting(StudentDashboardResponse.RequirementItem::title)
+                .containsExactly("Weekly report");
+        assertThat(section.returned()).extracting(StudentDashboardResponse.RequirementItem::feedback)
+                .containsExactly("Please fix");
+    }
+
+    @Test
+    void coordinatorRowsListOverdueRequirementsAndTheFifthFlag() {
+        AppUser ana = student(10, "Ana");
+        when(users.findByCoordinatorIdOrderByFullNameAsc(1)).thenReturn(List.of(ana));
+        when(placements.findByStudentIdIn(anyCollection())).thenReturn(List.of());
+        Requirement moa = RequirementFixtures.requirement(50, 1, "Submit signed MOA", TODAY.minusDays(2));
+        when(requirementRepo.findByCoordinatorIdAndArchivedAtIsNull(1)).thenReturn(List.of(moa));
+        when(requirementAssignments.findActiveForCoordinator(any(), anyCollection())).thenReturn(List.of(
+                RequirementFixtures.assignment(70, moa, 10, AssignmentStatus.NOT_STARTED)));
+        when(requirementAssignments.countActiveSubmittedForCoordinator(1)).thenReturn(3L);
+
+        CoordinatorDashboardResponse dashboard = service.coordinatorDashboard(1);
+
+        CoordinatorDashboardResponse.StudentRow row = dashboard.students().get(0);
+        assertThat(row.flags()).extracting(AssistanceFlag::code).containsExactly(Code.OVERDUE_REQUIREMENTS);
+        assertThat(row.overdueRequirements()).singleElement().satisfies(item -> {
+            assertThat(item.title()).isEqualTo("Submit signed MOA");
+            assertThat(item.dueDate()).isEqualTo(TODAY.minusDays(2));
+            assertThat(item.status()).isEqualTo(AssignmentStatus.NOT_STARTED);
+        });
+        assertThat(dashboard.totals().requirementsAwaitingReview()).isEqualTo(3);
+    }
+
+    @Test
+    void awaitingReviewCountsEvenWithoutCurrentStudents() {
+        // e.g. a student was reassigned away but still has a submission on this coordinator's requirement
+        when(users.findByCoordinatorIdOrderByFullNameAsc(1)).thenReturn(List.of());
+        when(requirementAssignments.countActiveSubmittedForCoordinator(1)).thenReturn(1L);
+
+        assertThat(service.coordinatorDashboard(1).totals().requirementsAwaitingReview()).isEqualTo(1);
     }
 
     // ---- helpers ----

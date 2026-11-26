@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.ojttrack.backend.dashboard.AssistanceFlag.Code;
 import com.ojttrack.backend.placement.Placement;
 import com.ojttrack.backend.placement.PlacementStatus;
+import com.ojttrack.backend.requirement.AssignmentStatus;
+import com.ojttrack.backend.requirement.RequirementSummary.OverdueItem;
 import com.ojttrack.backend.timelog.TimeLog;
 import com.ojttrack.backend.timelog.TimeLogStatus;
 import com.ojttrack.backend.timelog.TimeLogSummaryResponse;
@@ -189,6 +191,32 @@ class AssistanceRulesTest {
             Placement active = placement(1, PlacementStatus.ACTIVE, LocalDate.of(2027, 1, 4), LocalDate.of(2027, 1, 31));
             ReflectionTestUtils.setField(active, "endDate", null);
             assertThat(codes(null, List.of(active), sixVerifiedDays(), LocalDate.of(2027, 1, 12))).isEmpty();
+        }
+    }
+
+    @Nested
+    class OverdueRequirements {
+        final List<OverdueItem> oneOverdue = List.of(
+                new OverdueItem(50, "Submit signed MOA", TODAY.minusDays(3), AssignmentStatus.NOT_STARTED));
+
+        @Test
+        void noOverdueItemsNoFlag() {
+            assertThat(AssistanceRules.flagsFor(null, List.of(), List.of(), List.of(), TODAY)).isEmpty();
+        }
+
+        @Test
+        void overdueItemsRaiseTheFifthFlag() {
+            List<AssistanceFlag> flags = AssistanceRules.flagsFor(null, List.of(), List.of(), oneOverdue, TODAY);
+            assertThat(flags).extracting(AssistanceFlag::code).containsExactly(Code.OVERDUE_REQUIREMENTS);
+            assertThat(flags.get(0).message()).isEqualTo("1 overdue requirement(s)");
+        }
+
+        @Test
+        void itIsIndependentOfPlacementsAndAddsToOtherFlags() {
+            Placement active = placement(1, PlacementStatus.ACTIVE, TODAY.minusDays(30), TODAY.plusDays(90));
+            List<AssistanceFlag> flags = AssistanceRules.flagsFor(null, List.of(active), List.of(), oneOverdue, TODAY);
+            assertThat(flags).extracting(AssistanceFlag::code)
+                    .containsExactly(Code.NO_RECENT_LOGS, Code.OVERDUE_REQUIREMENTS);
         }
     }
 

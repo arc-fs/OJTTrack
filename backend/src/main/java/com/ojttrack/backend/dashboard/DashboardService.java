@@ -12,6 +12,16 @@ import com.ojttrack.backend.placement.PlacementRepository;
 import com.ojttrack.backend.placement.PlacementRequestRepository;
 import com.ojttrack.backend.placement.PlacementRequestStatus;
 import com.ojttrack.backend.placement.PlacementStatus;
+import com.ojttrack.backend.dashboard.StudentDashboardResponse.RequirementItem;
+import com.ojttrack.backend.requirement.AssignmentStatus;
+import com.ojttrack.backend.requirement.Requirement;
+import com.ojttrack.backend.requirement.RequirementAssignment;
+import com.ojttrack.backend.requirement.RequirementAssignmentRepository;
+import com.ojttrack.backend.requirement.RequirementRepository;
+import com.ojttrack.backend.requirement.RequirementRules;
+import com.ojttrack.backend.requirement.RequirementSummary;
+import com.ojttrack.backend.requirement.RequirementSummary.OverdueItem;
+import java.util.ArrayList;
 import com.ojttrack.backend.timelog.TimeLog;
 import com.ojttrack.backend.timelog.TimeLogRepository;
 import com.ojttrack.backend.timelog.TimeLogStatus;
@@ -47,16 +57,21 @@ public class DashboardService {
     private final PlacementRequestRepository requests;
     private final TimeLogRepository logs;
     private final AppUserRepository users;
+    private final RequirementRepository requirements;
+    private final RequirementAssignmentRepository requirementAssignments;
     private final Clock clock;
 
     public DashboardService(JobApplicationRepository applications, PlacementRepository placements,
                             PlacementRequestRepository requests, TimeLogRepository logs,
-                            AppUserRepository users, Clock clock) {
+                            AppUserRepository users, RequirementRepository requirements,
+                            RequirementAssignmentRepository requirementAssignments, Clock clock) {
         this.applications = applications;
         this.placements = placements;
         this.requests = requests;
         this.logs = logs;
         this.users = users;
+        this.requirements = requirements;
+        this.requirementAssignments = requirementAssignments;
         this.clock = clock;
     }
 
@@ -93,16 +108,59 @@ public class DashboardService {
                 .map(r -> new PendingRequest(companies.get(r.getApplicationId()), r.isChange() ? "CHANGE" : "ACTIVATION"))
                 .orElse(null);
 
-        return new StudentDashboardResponse(counts, followUps, placement, pending);
+        return new StudentDashboardResponse(counts, followUps, placement, pending, studentRequirements(studentId, today));
+    }
+
+    /** All of the student's non-archived requirements that need their attention, whoever owns them. */
+    private StudentDashboardResponse.Requirements studentRequirements(Integer studentId, LocalDate today) {
+        List<RequirementAssignment> active = requirementAssignments.findActiveByStudentId(studentId);
+        Map<Integer, Requirement> byId = active.isEmpty() ? Map.of()
+                : requirements.findAllById(active.stream().map(RequirementAssignment::getRequirementId).toList())
+                        .stream().collect(Collectors.toMap(Requirement::getId, Function.identity()));
+        List<RequirementItem> overdue = new ArrayList<>();
+        List<RequirementItem> dueSoon = new ArrayList<>();
+        List<RequirementItem> returned = new ArrayList<>();
+        for (RequirementAssignment a : active) {
+            Requirement r = byId.get(a.getRequirementId());
+            if (r == null || r.isArchived()) {
+                continue;
+            }
+            RequirementItem item = new RequirementItem(a.getId(), r.getTitle(), r.getDueDate(), a.getStatus(), a.getFeedback());
+            if (RequirementRules.isOverdue(a.getStatus(), r.getDueDate(), false, today)) {
+                overdue.add(item);
+            } else if (RequirementRules.isDueSoon(a.getStatus(), r.getDueDate(), false, today)) {
+                dueSoon.add(item);
+            }
+            if (a.getStatus() == AssignmentStatus.RETURNED) {
+                returned.add(item);
+            }
+        }
+        Comparator<RequirementItem> byDate = Comparator.comparing(RequirementItem::dueDate,
+                Comparator.nullsLast(Comparator.naturalOrder()));
+        overdue.sort(byDate);
+        dueSoon.sort(byDate);
+        returned.sort(byDate);
+        return new StudentDashboardResponse.Requirements(overdue, dueSoon, returned);
     }
 
     @Transactional(readOnly = true)
     public CoordinatorDashboardResponse coordinatorDashboard(Integer coordinatorId) {
         LocalDate today = LocalDate.now(clock);
+        // Requirements this coordinator OWNS that wait for their review (any student, even one
+        // since reassigned): exactly what their Requirements tab lets them review.
+        long requirementsAwaitingReview = requirementAssignments.countActiveSubmittedForCoordinator(coordinatorId);
         List<AppUser> students = users.findByCoordinatorIdOrderByFullNameAsc(coordinatorId);
         if (students.isEmpty()) {
-            return new CoordinatorDashboardResponse(new Totals(0, 0, 0, 0), List.of());
+            return new CoordinatorDashboardResponse(new Totals(0, 0, 0, 0, requirementsAwaitingReview), List.of());
         }
+
+        // Overdue items per CURRENT student, from non-archived requirements this coordinator owns.
+        Map<Integer, Requirement> ownedActive = requirements.findByCoordinatorIdAndArchivedAtIsNull(coordinatorId)
+                .stream().collect(Collectors.toMap(Requirement::getId, Function.identity()));
+        Map<Integer, List<RequirementAssignment>> assignmentsByStudent = ownedActive.isEmpty() ? Map.of()
+                : requirementAssignments.findActiveForCoordinator(coordinatorId,
+                                students.stream().map(AppUser::getId).toList())
+                        .stream().collect(Collectors.groupingBy(RequirementAssignment::getStudentId));
 
         List<Placement> allPlacements = placements.findByStudentIdIn(
                 students.stream().map(AppUser::getId).toList());
@@ -130,10 +188,13 @@ public class DashboardService {
                     Placement shown = shownByStudent.get(student.getId());
                     List<TimeLog> shownLogs = shown == null ? List.of()
                             : logsByPlacement.getOrDefault(shown.getId(), List.of());
+                    List<OverdueItem> overdue = RequirementSummary.of(
+                            assignmentsByStudent.getOrDefault(student.getId(), List.of()), ownedActive, today).overdue();
                     return new StudentRow(student.getId(), student.getFullName(), student.getEmail(),
                             student.getPlacementSearchStartsOn(),
                             shown == null ? null : DashboardPlacement.of(shown, companies.get(shown.getApplicationId()), shownLogs),
-                            AssistanceRules.flagsFor(student.getPlacementSearchStartsOn(), own, shownLogs, today));
+                            AssistanceRules.flagsFor(student.getPlacementSearchStartsOn(), own, shownLogs, overdue, today),
+                            overdue);
                 })
                 // flagged students first, then alphabetical (the repository already sorts by name)
                 .sorted(Comparator.comparing((StudentRow row) -> row.flags().isEmpty()))
@@ -148,6 +209,7 @@ public class DashboardService {
                 .count();
 
         return new CoordinatorDashboardResponse(
-                new Totals(students.size(), activePlacements, completedPlacements, awaitingReview), rows);
+                new Totals(students.size(), activePlacements, completedPlacements, awaitingReview,
+                        requirementsAwaitingReview), rows);
     }
 }
