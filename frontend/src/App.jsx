@@ -4,6 +4,8 @@ import ApplicationsPage from './ApplicationsPage.jsx'
 import CoordinatorPage from './CoordinatorPage.jsx'
 import Login from './Login.jsx'
 import PlacementRequests from './PlacementRequests.jsx'
+import ProgressPage from './ProgressPage.jsx'
+import ReviewQueue from './ReviewQueue.jsx'
 import Tabs from './Tabs.jsx'
 import TimeLogsPage from './TimeLogsPage.jsx'
 
@@ -60,6 +62,8 @@ const STUDENT_TABS = [
 ]
 
 const COORDINATOR_TABS = [
+    { id: 'review', label: 'Review queue', render: (active) => <ReviewQueue active={active} /> },
+    { id: 'progress', label: 'Progress', render: (active) => <ProgressPage active={active} /> },
     { id: 'requests', label: 'Placement requests', render: () => <PlacementRequests /> },
     { id: 'students', label: 'Students', render: () => <CoordinatorPage /> },
 ]
