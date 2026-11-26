@@ -32,14 +32,14 @@ public class TimeLogController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TimeLogResponse submit(@Valid @RequestBody TimeLogRequest body,
+    public TimeLogResponse submit(@Valid @RequestBody CreateTimeLogRequest body,
                                   @AuthenticationPrincipal AppUserDetails student) {
         return service.submit(student.getId(), body);
     }
 
     @PutMapping("/{id}")
     public TimeLogResponse edit(@PathVariable Integer id,
-                                @Valid @RequestBody TimeLogRequest body,
+                                @Valid @RequestBody UpdateTimeLogRequest body,
                                 @AuthenticationPrincipal AppUserDetails student) {
         return service.edit(student.getId(), id, body);
     }

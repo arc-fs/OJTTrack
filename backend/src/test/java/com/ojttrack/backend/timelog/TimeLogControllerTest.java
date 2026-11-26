@@ -38,9 +38,46 @@ import org.springframework.test.web.servlet.MockMvc;
 class TimeLogControllerTest {
 
     private static final String VALID = """
-            {"logDate":"2027-01-06","timeIn":"08:00","timeOut":"17:00","endsNextDay":false,
+            {"placementId":500,"logDate":"2027-01-06","timeIn":"08:00","timeOut":"17:00","endsNextDay":false,
              "breakMinutes":60,"accomplishments":"Built the login page"}
             """;
+
+    /** An edit body: no placementId (edits never move a log), but the version the student saw. */
+    private static final String VALID_EDIT = VALID.replace("\"placementId\":500", "\"version\":2");
+
+    @Test
+    void createRequiresPlacementId() throws Exception {
+        String body = VALID.replace("\"placementId\":500,", "");
+
+        mvc.perform(post("/api/time-logs").with(user(TestUsers.student(5))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail", containsString("placementId")));
+        verify(service, never()).submit(any(), any());
+    }
+
+    @Test
+    void editRequiresVersion() throws Exception {
+        String body = VALID_EDIT.replace("\"version\":2,", "");
+
+        mvc.perform(put("/api/time-logs/7").with(user(TestUsers.student(5))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail", containsString("version")));
+        verify(service, never()).edit(any(), any(), any());
+    }
+
+    @Test
+    void editTimesWithSecondsAreRejected() throws Exception {
+        // The whole-minute rule lives in the shared TimeLogFields interface: check it applies to edits too.
+        String body = VALID_EDIT.replace("\"17:00\"", "\"17:00:15\"");
+
+        mvc.perform(put("/api/time-logs/7").with(user(TestUsers.student(5))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail", containsString("whole minutes")));
+        verify(service, never()).edit(any(), any(), any());
+    }
 
     @Autowired
     MockMvc mvc;
@@ -123,7 +160,7 @@ class TimeLogControllerTest {
     @Test
     void editPassesIdAndBodyToService() throws Exception {
         when(service.edit(eq(5), eq(7), any())).thenReturn(response());
-        String body = VALID.replace("\"accomplishments\"", "\"version\":2,\"accomplishments\"");
+        String body = VALID_EDIT;
 
         mvc.perform(put("/api/time-logs/7").with(user(TestUsers.student(5))).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(body))
