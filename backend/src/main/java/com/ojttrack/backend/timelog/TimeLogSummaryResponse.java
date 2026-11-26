@@ -25,7 +25,7 @@ public record TimeLogSummaryResponse(
         LocalDate estimatedCompletionDate,
         LocalDate basedOnLogsUpTo) {
 
-    static TimeLogSummaryResponse of(Placement placement, List<TimeLog> logs) {
+    public static TimeLogSummaryResponse of(Placement placement, List<TimeLog> logs) {
         List<TimeLog> verified = logs.stream().filter(l -> l.getStatus() == TimeLogStatus.VERIFIED).toList();
         List<TimeLog> pending = logs.stream().filter(l -> l.getStatus() == TimeLogStatus.PENDING).toList();
         int returnedCount = (int) logs.stream().filter(l -> l.getStatus() == TimeLogStatus.RETURNED).count();

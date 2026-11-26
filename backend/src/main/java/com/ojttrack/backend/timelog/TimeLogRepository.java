@@ -2,6 +2,7 @@ package com.ojttrack.backend.timelog;
 
 import com.ojttrack.backend.placement.PlacementStatus;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,6 +19,9 @@ public interface TimeLogRepository extends JpaRepository<TimeLog, Integer> {
     boolean existsByPlacementIdAndLogDate(Integer placementId, LocalDate logDate);
 
     boolean existsByPlacementIdAndLogDateAndIdNot(Integer placementId, LocalDate logDate, Integer id);
+
+    /** All logs of these placements, for the coordinator dashboard (one query instead of one per student). */
+    List<TimeLog> findByPlacementIdIn(Collection<Integer> placementIds);
 
     /**
      * Logs with the given status on ACTIVE placements of this coordinator's students,

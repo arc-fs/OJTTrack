@@ -1,6 +1,7 @@
 package com.ojttrack.backend.placement;
 
 import jakarta.persistence.LockModeType;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,6 +22,9 @@ public interface PlacementRepository extends JpaRepository<Placement, Integer> {
     boolean existsByApplicationId(Integer applicationId);
 
     boolean existsByStudentIdAndStatus(Integer studentId, PlacementStatus status);
+
+    /** All placements (any status) of these students, for the coordinator dashboard. */
+    List<Placement> findByStudentIdIn(Collection<Integer> studentIds);
 
     /** Placements with the given status belonging to this coordinator's students. */
     @Query("""
