@@ -30,7 +30,7 @@ public class CoordinatorPlacementController {
                                             @Valid @RequestBody ApprovePlacementRequest body,
                                             @AuthenticationPrincipal AppUserDetails coordinator) {
         return service.approve(coordinator.getId(), id,
-                body.startDate(), body.endDate(), body.requiredHours(), body.note());
+                body.startDate(), body.endDate(), body.requiredHours(), body.role(), body.note());
     }
 
     @PostMapping("/{id}/reject")

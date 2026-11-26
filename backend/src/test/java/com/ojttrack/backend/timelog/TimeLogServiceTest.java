@@ -293,7 +293,7 @@ class TimeLogServiceTest {
     }
 
     private static Placement placement(int id, int studentId) {
-        Placement placement = Placement.activate(100, studentId, START, PLANNED_END, 486);
+        Placement placement = Placement.activate(100, studentId, START, PLANNED_END, 486, "Intern");
         ReflectionTestUtils.setField(placement, "id", id);
         return placement;
     }

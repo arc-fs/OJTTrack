@@ -109,10 +109,13 @@ public class PlacementService {
     @Transactional
     public PlacementRequestResponse approve(Integer coordinatorId, Integer requestId,
                                             LocalDate startDate, LocalDate endDate,
-                                            Integer requiredHours, String note) {
+                                            Integer requiredHours, String role, String note) {
         PlacementRequest request = lockPendingRequest(coordinatorId, requestId);
         if (endDate.isBefore(startDate)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "endDate must be on or after startDate");
+        }
+        if (role == null || role.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Enter the placement's role (job title)");
         }
 
         // Re-check the application now: the student may have changed it since submitting.
@@ -135,7 +138,7 @@ public class PlacementService {
             placements.saveAndFlush(old);
         });
         placements.save(Placement.activate(
-                application.getId(), request.getStudentId(), startDate, endDate, requiredHours));
+                application.getId(), request.getStudentId(), startDate, endDate, requiredHours, role));
         request.approve(coordinatorId, blankToNull(note));
 
         return PlacementRequestResponse.of(request, application.getCompanyName(), nameOf(request.getStudentId()));

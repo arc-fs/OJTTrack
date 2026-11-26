@@ -55,7 +55,7 @@ class TimeLogReviewServiceTest {
     void setUp() {
         service = new TimeLogReviewService(logs, placements, applications, users,
                 Clock.fixed(NOW, ZoneId.of("Asia/Manila")));
-        placement = Placement.activate(100, STUDENT, LocalDate.of(2027, 1, 4), LocalDate.of(2027, 4, 30), 8);
+        placement = Placement.activate(100, STUDENT, LocalDate.of(2027, 1, 4), LocalDate.of(2027, 4, 30), 8, "Intern");
         ReflectionTestUtils.setField(placement, "id", 500);
         when(placements.findByIdForUpdate(500)).thenReturn(Optional.of(placement));
         when(placements.findById(500)).thenReturn(Optional.of(placement));

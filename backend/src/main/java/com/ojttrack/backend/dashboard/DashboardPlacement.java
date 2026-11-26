@@ -11,13 +11,14 @@ import java.util.List;
 public record DashboardPlacement(
         Integer placementId,
         String companyName,
+        String role,              // null for placements created before roles were recorded (V8)
         PlacementStatus status,
         LocalDate startDate,
         LocalDate endDate,
         TimeLogSummaryResponse progress) {
 
     static DashboardPlacement of(Placement placement, String companyName, List<TimeLog> logsOfPlacement) {
-        return new DashboardPlacement(placement.getId(), companyName, placement.getStatus(),
+        return new DashboardPlacement(placement.getId(), companyName, placement.getRole(), placement.getStatus(),
                 placement.getStartDate(), placement.getEndDate(),
                 TimeLogSummaryResponse.of(placement, logsOfPlacement));
     }

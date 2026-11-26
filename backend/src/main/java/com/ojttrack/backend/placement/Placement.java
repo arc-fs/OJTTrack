@@ -47,11 +47,25 @@ public class Placement {
     @Column(name = "completed_by")
     private Integer completedBy;
 
+    // The job title, set by the coordinator at approval. NULL only for placements created
+    // before V8; every new placement has one (activate below), and there is no setter.
+    @Column(length = 150, updatable = false)
+    private String role;
+
     protected Placement() {}   // JPA needs this
 
+    /**
+     * A new ACTIVE placement. The role is required and stored trimmed. A missing or blank
+     * role is a programming error here (the request DTO and the service validate it first).
+     */
     public static Placement activate(Integer applicationId, Integer studentId,
-                                     LocalDate startDate, LocalDate endDate, Integer requiredHours) {
+                                     LocalDate startDate, LocalDate endDate, Integer requiredHours,
+                                     String role) {
+        if (role == null || role.isBlank()) {
+            throw new IllegalArgumentException("A new placement needs a role");
+        }
         Placement placement = new Placement();
+        placement.role = role.strip();
         placement.applicationId = applicationId;
         placement.studentId = studentId;
         placement.startDate = startDate;
@@ -91,6 +105,7 @@ public class Placement {
     public LocalDate getStartDate() { return startDate; }
     public LocalDate getEndDate() { return endDate; }
     public Integer getRequiredHours() { return requiredHours; }
+    public String getRole() { return role; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getEndedAt() { return endedAt; }
 }

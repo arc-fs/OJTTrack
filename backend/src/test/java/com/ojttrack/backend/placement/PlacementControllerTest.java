@@ -56,13 +56,18 @@ class PlacementControllerTest {
 
     @Test
     void listsOnlyTheLoggedInStudentsPlacements() throws Exception {
-        when(service.placementsFor(5)).thenReturn(List.of(new PlacementResponse(
-                500, 100, "Acme", PlacementStatus.ACTIVE, LocalDate.of(2027, 1, 4), LocalDate.of(2027, 4, 30),
-                486, Instant.now(), null)));
+        when(service.placementsFor(5)).thenReturn(List.of(
+                new PlacementResponse(500, 100, "Acme", "Web Developer Intern", PlacementStatus.ACTIVE,
+                        LocalDate.of(2027, 1, 4), LocalDate.of(2027, 4, 30), 486, Instant.now(), null),
+                // created before roles were recorded (V8): no role
+                new PlacementResponse(400, 90, "Old Co", null, PlacementStatus.TERMINATED,
+                        LocalDate.of(2026, 6, 1), LocalDate.of(2026, 9, 30), 486, Instant.now(), Instant.now())));
 
         mvc.perform(get("/api/placements").with(user(TestUsers.student(5))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].companyName").value("Acme"))
+                .andExpect(jsonPath("$[0].role").value("Web Developer Intern"))
+                .andExpect(jsonPath("$[1].role").doesNotExist())
                 .andExpect(jsonPath("$[0].status").value("ACTIVE"))
                 .andExpect(jsonPath("$[0].studentId").doesNotExist());
         verify(service).placementsFor(5);

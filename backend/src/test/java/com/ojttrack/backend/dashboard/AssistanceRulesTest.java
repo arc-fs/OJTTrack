@@ -251,7 +251,7 @@ class AssistanceRulesTest {
     }
 
     static Placement placement(int id, PlacementStatus status, LocalDate start, LocalDate end) {
-        Placement placement = Placement.activate(100 + id, 10, start, end, 486);
+        Placement placement = Placement.activate(100 + id, 10, start, end, 486, "Intern");
         ReflectionTestUtils.setField(placement, "id", id);
         ReflectionTestUtils.setField(placement, "status", status);
         if (status != PlacementStatus.ACTIVE) {

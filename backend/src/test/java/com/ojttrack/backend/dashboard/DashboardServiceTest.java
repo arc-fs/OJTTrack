@@ -111,6 +111,7 @@ class DashboardServiceTest {
         DashboardPlacement shown = service.studentDashboard(STUDENT).placement();
 
         assertThat(shown.companyName()).isEqualTo("Acme");
+        assertThat(shown.role()).isEqualTo("Intern");   // the placement's role reaches the dashboard
         assertThat(shown.progress().verifiedMinutes()).isEqualTo(480);
     }
 

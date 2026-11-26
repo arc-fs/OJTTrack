@@ -7,6 +7,7 @@ public record PlacementResponse(
         Integer id,
         Integer applicationId,
         String companyName,
+        String role,              // null for placements created before roles were recorded (V8)
         PlacementStatus status,
         LocalDate startDate,
         LocalDate endDate,
@@ -16,7 +17,8 @@ public record PlacementResponse(
 
     static PlacementResponse of(Placement placement, String companyName) {
         return new PlacementResponse(
-                placement.getId(), placement.getApplicationId(), companyName, placement.getStatus(),
+                placement.getId(), placement.getApplicationId(), companyName, placement.getRole(),
+                placement.getStatus(),
                 placement.getStartDate(), placement.getEndDate(), placement.getRequiredHours(),
                 placement.getCreatedAt(), placement.getEndedAt());
     }
