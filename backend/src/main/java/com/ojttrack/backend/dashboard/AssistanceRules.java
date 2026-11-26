@@ -3,6 +3,7 @@ package com.ojttrack.backend.dashboard;
 import com.ojttrack.backend.dashboard.AssistanceFlag.Code;
 import com.ojttrack.backend.placement.Placement;
 import com.ojttrack.backend.placement.PlacementStatus;
+import com.ojttrack.backend.requirement.RequirementSummary.OverdueItem;
 import com.ojttrack.backend.timelog.CompletionEstimate;
 import com.ojttrack.backend.timelog.TimeLog;
 import com.ojttrack.backend.timelog.TimeLogStatus;
@@ -26,14 +27,34 @@ public final class AssistanceRules {
 
     private AssistanceRules() {}
 
+    /** The four placement/time-log flags only (no requirement data). */
+    public static List<AssistanceFlag> flagsFor(LocalDate placementSearchStartsOn, List<Placement> placements,
+                                                List<TimeLog> logs, LocalDate today) {
+        return flagsFor(placementSearchStartsOn, placements, logs, List.of(), today);
+    }
+
     /**
      * @param placementSearchStartsOn set by the coordinator; null = never "No placement yet"
      * @param placements all of the student's placements (any status)
      * @param logs logs of the student's placements; only the ACTIVE placement's logs are used
+     * @param overdueRequirements this coordinator's non-archived requirements overdue for the student
+     *                            (computed with RequirementRules; the dashboard lists each item)
      * @param today today's date in Asia/Manila
      */
     public static List<AssistanceFlag> flagsFor(LocalDate placementSearchStartsOn, List<Placement> placements,
-                                                List<TimeLog> logs, LocalDate today) {
+                                                List<TimeLog> logs, List<OverdueItem> overdueRequirements,
+                                                LocalDate today) {
+        List<AssistanceFlag> flags = new ArrayList<>(placementFlags(placementSearchStartsOn, placements, logs, today));
+        // OVERDUE_REQUIREMENTS: independent of placements (requirements belong to the student).
+        if (!overdueRequirements.isEmpty()) {
+            flags.add(new AssistanceFlag(Code.OVERDUE_REQUIREMENTS,
+                    overdueRequirements.size() + " overdue requirement(s)"));
+        }
+        return flags;
+    }
+
+    private static List<AssistanceFlag> placementFlags(LocalDate placementSearchStartsOn, List<Placement> placements,
+                                                       List<TimeLog> logs, LocalDate today) {
         List<AssistanceFlag> flags = new ArrayList<>();
         Optional<Placement> active = placements.stream()
                 .filter(p -> p.getStatus() == PlacementStatus.ACTIVE).findFirst();

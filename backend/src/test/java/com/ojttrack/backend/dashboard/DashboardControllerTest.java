@@ -54,7 +54,7 @@ class DashboardControllerTest {
                 Map.of(ApplicationStatus.APPLIED, 2L),
                 List.of(new StudentDashboardResponse.FollowUp(3, "Acme", ApplicationStatus.APPLIED,
                         LocalDate.of(2027, 1, 18), true)),
-                null, null));
+                null, null, new StudentDashboardResponse.Requirements(List.of(), List.of(), List.of())));
 
         mvc.perform(get("/api/dashboard").with(user(TestUsers.student(5))))
                 .andExpect(status().isOk())
@@ -66,10 +66,11 @@ class DashboardControllerTest {
     @Test
     void coordinatorDashboardUsesTheLoggedInCoordinator() throws Exception {
         when(service.coordinatorDashboard(3)).thenReturn(new CoordinatorDashboardResponse(
-                new CoordinatorDashboardResponse.Totals(1, 0, 0, 0),
+                new CoordinatorDashboardResponse.Totals(1, 0, 0, 0, 0),
                 List.of(new CoordinatorDashboardResponse.StudentRow(10, "Ana", "ana@test.local",
                         LocalDate.of(2027, 1, 10), null,
-                        List.of(new AssistanceFlag(AssistanceFlag.Code.NO_PLACEMENT, "No placement yet (search started 2027-01-10)"))))));
+                        List.of(new AssistanceFlag(AssistanceFlag.Code.NO_PLACEMENT, "No placement yet (search started 2027-01-10)")),
+                        List.of()))));
 
         mvc.perform(get("/api/coordinator/dashboard").with(user(TestUsers.coordinator(3))))
                 .andExpect(status().isOk())
