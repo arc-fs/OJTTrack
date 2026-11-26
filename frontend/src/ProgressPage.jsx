@@ -150,14 +150,18 @@ function ProgressPage({ active }) {
             {message && <p role={message.kind}>{message.text}</p>}
 
             {placements.length === 0 ? <p>No active placements.</p> : (
-                <ul>
+                // card-list / card-title / card-actions only change the phone layout; actions come last
+                <ul className="card-list">
                     {placements.map((p) => (
                         <li key={p.placementId}>
-                            <strong>{p.studentName}</strong> · {p.companyName} · {p.requiredHours} h required{' '}
-                            <button type="button" disabled={busy} onClick={() => open(p.placementId)}>
-                                {p.placementId === openId ? 'Reload' : 'Open'}
-                            </button>
+                            <strong className="card-title">{p.studentName}</strong> · {p.companyName} ·{' '}
+                            {p.requiredHours} h required
                             <ProgressCard summary={p.progress} completionNote="Ready for you to confirm completion." />
+                            <div className="card-actions">
+                                <button type="button" disabled={busy} onClick={() => open(p.placementId)}>
+                                    {p.placementId === openId ? 'Reload' : 'Open'}
+                                </button>
+                            </div>
                         </li>
                     ))}
                 </ul>
@@ -170,8 +174,8 @@ function ProgressPage({ active }) {
                         : !details ? <p>Loading...</p> : (
                         <>
                             <ProgressCard summary={summary} completionNote="Ready for you to confirm completion." />
-                            <button type="button" disabled={!canComplete || busy} title={completeHint}
-                                    onClick={() => complete(opened)}>
+                            <button type="button" data-variant="primary" disabled={!canComplete || busy}
+                                    title={completeHint} onClick={() => complete(opened)}>
                                 Complete placement
                             </button>
                             {!canComplete && completeHint && <span> {completeHint}.</span>}

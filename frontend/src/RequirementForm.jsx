@@ -87,7 +87,8 @@ function RequirementForm({ mode, draft, onChange, onSave, onCancel, students = [
 
             {error && <p role="alert">{error}</p>}
 
-            <button type="submit" disabled={busy || (mode === 'edit' && warning && !draft.understood)}>
+            <button type="submit" data-variant="primary"
+                    disabled={busy || (mode === 'edit' && warning && !draft.understood)}>
                 {mode === 'create' ? 'Create requirement' : 'Save changes'}
             </button>{' '}
             {onArchiveAndReplace && (
@@ -95,7 +96,10 @@ function RequirementForm({ mode, draft, onChange, onSave, onCancel, students = [
                     Archive and create replacement
                 </button>{' '}</>
             )}
-            <button type="button" onClick={onCancel}>{mode === 'create' ? 'Discard draft' : 'Cancel edit'}</button>
+            {/* Discarding a draft destroys typed work (danger); cancelling an edit is routine */}
+            <button type="button" data-variant={mode === 'create' ? 'danger' : undefined} onClick={onCancel}>
+                {mode === 'create' ? 'Discard draft' : 'Cancel edit'}
+            </button>
         </form>
     )
 }

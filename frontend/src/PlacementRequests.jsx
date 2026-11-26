@@ -98,17 +98,19 @@ function PlacementRequests() {
             ) : requests.length === 0 ? (
                 <p>No pending placement requests.</p>
             ) : (
-                <ul>
+                // card-list / card-title / card-actions only change the phone layout
+                <ul className="card-list">
                     {requests.map((r) => (
                         <li key={r.id}>
-                            <strong>{r.studentName}</strong>: {r.type === 'CHANGE' ? 'change to' : 'placement at'}{' '}
+                            <strong className="card-title">{r.studentName}</strong>:{' '}
+                            {r.type === 'CHANGE' ? 'change to' : 'placement at'}{' '}
                             <strong>{r.companyName}</strong>, requested {new Date(r.createdAt).toLocaleDateString()}
                             {r.reason && <> · “{r.reason}”</>}{' '}
                             {openId !== r.id && (
-                                <>
+                                <span className="card-actions">
                                     <button onClick={() => open(r.id, 'approve')}>Approve</button>{' '}
                                     <button onClick={() => open(r.id, 'reject')}>Reject</button>
-                                </>
+                                </span>
                             )}
 
                             {openId === r.id && (
@@ -134,7 +136,9 @@ function PlacementRequests() {
                                     {mode === 'approve' && r.type === 'CHANGE' && (
                                         <p>Approving ends the student’s current placement.</p>
                                     )}
-                                    <button type="submit" disabled={submitting}>
+                                    {/* Primary only for approval: the same button confirms a rejection */}
+                                    <button type="submit" disabled={submitting}
+                                            data-variant={mode === 'approve' ? 'primary' : undefined}>
                                         {submitting ? 'Saving...' : mode === 'approve' ? 'Confirm approval' : 'Confirm rejection'}
                                     </button>{' '}
                                     <button type="button" onClick={close} disabled={submitting}>Cancel</button>

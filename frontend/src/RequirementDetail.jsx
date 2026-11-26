@@ -204,7 +204,9 @@ function RequirementDetail({ requirement, students, token, onChanged, onClose, o
                 </>
             )}
             {!anySubmitted(requirement.progressCounts) && (
-                <><button type="button" disabled={busy} onClick={deleteRequirement}>Delete</button>{' '}</>
+                <><button type="button" data-variant="danger" disabled={busy} onClick={deleteRequirement}>
+                    Delete
+                </button>{' '}</>
             )}
             <button type="button" onClick={onClose}>Close</button>
 
@@ -216,7 +218,8 @@ function RequirementDetail({ requirement, students, token, onChanged, onClose, o
 
             <h3>Students</h3>
             {assignments.length === 0 ? <p>No students are assigned.</p> : (
-                <table>
+                // stack-table: a card per student on phones; .cell-label is shown only there
+                <table className="stack-table">
                     <thead>
                         <tr>
                             <th>Student</th>
@@ -232,19 +235,22 @@ function RequirementDetail({ requirement, students, token, onChanged, onClose, o
                                 <tr key={a.assignmentId}>
                                     <td>{a.studentName}</td>
                                     <td>
+                                        <span className="cell-label">Status</span>
                                         {statusLabel(a.status, archived)}
-                                        {a.overdue && <> <strong>[Overdue]</strong></>}
+                                        {a.overdue && <> <strong className="badge">[Overdue]</strong></>}
                                         {a.confirmedByName && <> by {a.confirmedByName}</>}
                                     </td>
                                     <td>
-                                        {a.submittedAt && <>{new Date(a.submittedAt).toLocaleString()}</>}
+                                        <span className="cell-label">Submission</span>
+                                        {a.submittedAt ? <>{new Date(a.submittedAt).toLocaleString()}</> : 'Not submitted'}
                                         {a.note && <p>{a.note}</p>}
                                         {a.feedback && <p><em>Feedback: {a.feedback}</em></p>}
                                         <RequirementHistory history={a.history} />
                                     </td>
-                                    <td>
+                                    <td className="actions">
                                         {actions.includes('confirm') && (
-                                            <><button type="button" disabled={busy} onClick={() => review(a, 'confirm')}>
+                                            <><button type="button" data-variant="primary" disabled={busy}
+                                                      onClick={() => review(a, 'confirm')}>
                                                 Confirm
                                             </button>{' '}</>
                                         )}
@@ -271,7 +277,8 @@ function RequirementDetail({ requirement, students, token, onChanged, onClose, o
                                             )
                                         })}
                                         {!archived && a.status === 'NOT_STARTED' && a.history.length === 0 && (
-                                            <button type="button" disabled={busy} onClick={() => remove(a)}>Remove</button>
+                                            <button type="button" data-variant="danger" disabled={busy}
+                                                    onClick={() => remove(a)}>Remove</button>
                                         )}
                                     </td>
                                 </tr>

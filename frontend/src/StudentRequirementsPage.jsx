@@ -86,7 +86,9 @@ function StudentRequirementsPage({ active }) {
             {message && <p role={message.kind}>{message.text}</p>}
 
             {items.length === 0 ? <p>No requirements assigned yet.</p> : (
-                <ul>
+                // card-list / card-actions only change the phone layout. Order: title, status with
+                // its badge, details, history, then the actions last.
+                <ul className="card-list">
                     {items.map((item) => {
                         const id = item.assignmentId
                         const badge = dueBadge(item)
@@ -95,12 +97,12 @@ function StudentRequirementsPage({ active }) {
                                 <h2>
                                     {item.title}
                                     {item.archived && ' (Archived)'}
-                                    {badge && <> <strong>[{badge}]</strong></>}
                                 </h2>
                                 {item.description && <p>{item.description}</p>}
                                 <p>
                                     {item.dueDate ? <>Due {item.dueDate}</> : 'No due date'} · {statusLabel(item.status, item.archived)}
                                     {item.confirmedAt && <> on {new Date(item.confirmedAt).toLocaleDateString()}</>}
+                                    {badge && <> <strong className="badge">[{badge}]</strong></>}
                                 </p>
                                 {item.status === 'RETURNED' && item.feedback && (
                                     <p role="note"><strong>Coordinator feedback:</strong> {item.feedback}</p>
@@ -112,25 +114,29 @@ function StudentRequirementsPage({ active }) {
                                     </p>
                                 )}
 
-                                {canSubmit(item) && openId !== id && (
-                                    <button type="button" disabled={busyId !== null} onClick={() => setOpenId(id)}>
-                                        {item.status === 'RETURNED' ? 'Resubmit…' : 'Mark as submitted…'}
-                                    </button>
-                                )}
-                                {canSubmit(item) && openId === id && (
-                                    <div>
-                                        <label htmlFor={`note-${id}`}>Note for your coordinator (optional)</label>
-                                        <textarea id={`note-${id}`} maxLength={MAX_NOTE} value={notes[id] ?? ''}
-                                                  onChange={(e) => setNote(id, e.target.value)} />
-                                        <button type="button" disabled={busyId !== null} onClick={() => submit(item)}>
-                                            Submit
-                                        </button>{' '}
-                                        <button type="button" onClick={() => setOpenId(null)}>Cancel</button>
-                                        <span> (your note is kept)</span>
+                                <RequirementHistory history={item.history} />
+
+                                {canSubmit(item) && (
+                                    <div className="card-actions">
+                                        {openId !== id ? (
+                                            <button type="button" disabled={busyId !== null} onClick={() => setOpenId(id)}>
+                                                {item.status === 'RETURNED' ? 'Resubmit…' : 'Mark as submitted…'}
+                                            </button>
+                                        ) : (
+                                            <>
+                                                <label htmlFor={`note-${id}`}>Note for your coordinator (optional)</label>
+                                                <textarea id={`note-${id}`} maxLength={MAX_NOTE} value={notes[id] ?? ''}
+                                                          onChange={(e) => setNote(id, e.target.value)} />
+                                                <button type="button" data-variant="primary" disabled={busyId !== null}
+                                                        onClick={() => submit(item)}>
+                                                    Submit
+                                                </button>{' '}
+                                                <button type="button" onClick={() => setOpenId(null)}>Cancel</button>
+                                                <span> (your note is kept)</span>
+                                            </>
+                                        )}
                                     </div>
                                 )}
-
-                                <RequirementHistory history={item.history} />
                             </li>
                         )
                     })}

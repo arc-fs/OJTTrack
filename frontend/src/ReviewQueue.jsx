@@ -90,13 +90,14 @@ function ReviewQueue({ active }) {
             {message && <p role={message.kind}>{message.text}</p>}
 
             {queue.length === 0 ? <p>Nothing to review.</p> : (
-                <ul>
+                // card-list / card-title / card-actions only change the phone layout
+                <ul className="card-list">
                     {queue.map((item) => {
                         const { log } = item
                         return (
                             <li key={log.id}>
                                 <p>
-                                    <strong>{item.studentName}</strong> · {item.companyName} · {log.logDate}{' '}
+                                    <strong className="card-title">{item.studentName}</strong> · {item.companyName} · {log.logDate}{' '}
                                     {toHHmm(log.timeIn)}–{toHHmm(log.timeOut)}{log.endsNextDay && ' (+1 day)'}
                                     {log.breakMinutes > 0 && <> · break {log.breakMinutes} min</>}
                                     {' '}· <strong>{formatMinutes(log.workedMinutes)}</strong>
@@ -104,30 +105,34 @@ function ReviewQueue({ active }) {
                                 <p>{log.accomplishments}</p>
                                 {log.feedback && <p><em>Previous feedback: {log.feedback}</em></p>}
 
-                                <button type="button" disabled={busyId !== null} onClick={() => decide(item, 'verify')}>
-                                    Verify
-                                </button>{' '}
-                                {returningId !== log.id && (
-                                    <button type="button" disabled={busyId !== null} onClick={() => setReturningId(log.id)}>
-                                        Return…
-                                    </button>
-                                )}
+                                <div className="card-actions">
+                                    <button type="button" data-variant="primary" disabled={busyId !== null}
+                                            onClick={() => decide(item, 'verify')}>
+                                        Verify
+                                    </button>{' '}
+                                    {returningId !== log.id && (
+                                        <button type="button" disabled={busyId !== null}
+                                                onClick={() => setReturningId(log.id)}>
+                                            Return…
+                                        </button>
+                                    )}
 
-                                {returningId === log.id && (
-                                    <div>
-                                        <label htmlFor={`feedback-${log.id}`}>Feedback for the student</label>
-                                        <textarea id={`feedback-${log.id}`} maxLength={MAX_FEEDBACK}
-                                                  value={drafts[log.id] ?? ''}
-                                                  onChange={(e) => setDraft(log.id, e.target.value)} />
-                                        <button type="button"
-                                                disabled={busyId !== null || !(drafts[log.id] ?? '').trim()}
-                                                onClick={() => decide(item, 'return')}>
-                                            Return with feedback
-                                        </button>{' '}
-                                        <button type="button" onClick={() => setReturningId(null)}>Cancel</button>
-                                        <span> (your draft is kept)</span>
-                                    </div>
-                                )}
+                                    {returningId === log.id && (
+                                        <div>
+                                            <label htmlFor={`feedback-${log.id}`}>Feedback for the student</label>
+                                            <textarea id={`feedback-${log.id}`} maxLength={MAX_FEEDBACK}
+                                                      value={drafts[log.id] ?? ''}
+                                                      onChange={(e) => setDraft(log.id, e.target.value)} />
+                                            <button type="button"
+                                                    disabled={busyId !== null || !(drafts[log.id] ?? '').trim()}
+                                                    onClick={() => decide(item, 'return')}>
+                                                Return with feedback
+                                            </button>{' '}
+                                            <button type="button" onClick={() => setReturningId(null)}>Cancel</button>
+                                            <span> (your draft is kept)</span>
+                                        </div>
+                                    )}
+                                </div>
                             </li>
                         )
                     })}

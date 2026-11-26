@@ -131,7 +131,7 @@ function ApplicationsPage() {
                 <label htmlFor="follow-up">Follow up on (optional)</label>
                 <input id="follow-up" type="date" value={followUpDate}
                        onChange={(e) => setFollowUpDate(e.target.value)} />
-                <button type="submit">Add application</button>
+                <button type="submit" data-variant="primary">Add application</button>
                 {formError && <p>{formError}</p>}
             </form>
             <div>
@@ -150,13 +150,14 @@ function ApplicationsPage() {
             ) : visible.length === 0 ? (
                 <p>No applications match your filters.</p>
             ) : (
-                <ul>
+                // card-list / card-title / card-actions: spans and classes that only change phone layout
+                <ul className="card-list">
                     {visible.map((app) => {
                         const lockReason = lockReasons.get(app.id)
                         const locked = lockReason !== undefined
                         return (
                             <li key={app.id}>
-                                {app.companyName}{' '}
+                                <span className="card-title">{app.companyName}</span>{' '}
                                 <select
                                     value={app.status}
                                     disabled={locked}
@@ -173,8 +174,12 @@ function ApplicationsPage() {
                                            aria-label={'Follow-up date for ' + app.companyName}
                                            onChange={(e) => handleFollowUpChange(app, e.target.value)} />
                                 </label>{' '}
-                                <button disabled={locked} onClick={() => handleDelete(app.id)}>Delete</button>
-                                {locked && <span> (Locked: {lockReason})</span>}
+                                <span className="card-actions">
+                                    <button data-variant="danger" disabled={locked} onClick={() => handleDelete(app.id)}>
+                                        Delete
+                                    </button>
+                                    {locked && <span> (Locked: {lockReason})</span>}
+                                </span>
                             </li>
                         )
                     })}

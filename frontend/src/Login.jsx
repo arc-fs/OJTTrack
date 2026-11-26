@@ -43,7 +43,7 @@ function Login({ onLoggedIn }) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                 />
-                <button type="submit" disabled={submitting}>
+                <button type="submit" data-variant="primary" disabled={submitting}>
                     {submitting ? 'Logging in...' : 'Log in'}
                 </button>
                 {error && <p>{error}</p>}
