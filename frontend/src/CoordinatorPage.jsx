@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { apiFetch, apiJson } from './api.js'
-import PlacementRequests from './PlacementRequests.jsx'
 
 // Mirrors the backend rules in CreateStudentRequest, so most mistakes are caught
 // before a request is sent. The server still validates everything: these checks
@@ -67,9 +66,7 @@ function CoordinatorPage() {
 
     return (
         <div>
-            <PlacementRequests />
-
-            <h1>My Students</h1>
+            <h1>Students</h1>
 
             <form onSubmit={handleSubmit}>
                 <h2>Create a student account</h2>

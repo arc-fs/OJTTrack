@@ -76,6 +76,23 @@ class TimeLogServiceTest {
     }
 
     @Test
+    void submitForAPlacementThatIsNoLongerActiveIsAConflict() {
+        // The form was opened for placement 499; a transfer made 500 the ACTIVE one meanwhile.
+        assertMessage(() -> service.submit(STUDENT, request(499, LocalDate.of(2027, 1, 6), "08:00", "17:00", false, 60)),
+                "active placement has changed");
+        verify(logs, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void submitWithAnotherStudentsPlacementIdIsTheSameConflict() {
+        // 600 belongs to someone else: it never matches the logged-in student's ACTIVE placement.
+        assertStatus(() -> service.submit(STUDENT, request(600, LocalDate.of(2027, 1, 6), "08:00", "17:00", false, 60)),
+                HttpStatus.CONFLICT);
+        verify(logs, never()).saveAndFlush(any());
+        verify(placements, never()).findById(any());   // the foreign id is never even looked up
+    }
+
+    @Test
     void submitWithoutActivePlacementIsAConflict() {
         when(placements.findForUpdateByStudentIdAndStatus(STUDENT, PlacementStatus.ACTIVE)).thenReturn(Optional.empty());
 
@@ -178,11 +195,6 @@ class TimeLogServiceTest {
     }
 
     @Test
-    void editRequiresVersion() {
-        assertStatus(() -> service.edit(STUDENT, 7, editRequest(null)), HttpStatus.BAD_REQUEST);
-    }
-
-    @Test
     void editWithStaleVersionIsAConflict() {
         givenLog(7, TimeLogStatus.PENDING, 3);
 
@@ -254,14 +266,20 @@ class TimeLogServiceTest {
 
     // ---- helpers ----
 
-    private static TimeLogRequest request(LocalDate date, String in, String out, boolean nextDay, int breakMinutes) {
-        return new TimeLogRequest(date, LocalTime.parse(in), LocalTime.parse(out), nextDay, breakMinutes,
-                "  Built the login page  ", null);
+    /** A create request for the ACTIVE placement (500), as the form would send it. */
+    private static CreateTimeLogRequest request(LocalDate date, String in, String out, boolean nextDay, int breakMinutes) {
+        return request(500, date, in, out, nextDay, breakMinutes);
     }
 
-    private static TimeLogRequest editRequest(Integer version) {
-        return new TimeLogRequest(LocalDate.of(2027, 1, 7), LocalTime.parse("08:00"), LocalTime.parse("17:00"),
-                false, 30, "Fixed bugs", version);
+    private static CreateTimeLogRequest request(int placementId, LocalDate date, String in, String out,
+                                                boolean nextDay, int breakMinutes) {
+        return new CreateTimeLogRequest(placementId, date, LocalTime.parse(in), LocalTime.parse(out), nextDay,
+                breakMinutes, "  Built the login page  ");
+    }
+
+    private static UpdateTimeLogRequest editRequest(int version) {
+        return new UpdateTimeLogRequest(version, LocalDate.of(2027, 1, 7), LocalTime.parse("08:00"),
+                LocalTime.parse("17:00"), false, 30, "Fixed bugs");
     }
 
     private TimeLog givenLog(int id, TimeLogStatus status, int version) {

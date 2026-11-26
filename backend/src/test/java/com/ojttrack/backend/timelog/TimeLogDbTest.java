@@ -25,6 +25,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Proves what only PostgreSQL can: the generated worked_minutes column and the V5
@@ -246,6 +247,23 @@ class TimeLogDbTest {
 
         // ...while the old placement keeps its history
         assertThat(studentService.summary(student.getId(), oldPlacementId).verifiedMinutes()).isEqualTo(480);
+    }
+
+    @Test
+    void logForAPlacementEndedByATransferIsRejectedAndNothingIsSaved() {
+        // The student opened the form for the current placement...
+        Integer formOpenedFor = placement.getId();
+        // ...then the coordinator approved a transfer before the student pressed Save.
+        Placement newPlacement = switchToNewPlacement(486);
+
+        assertThatThrownBy(() -> studentService.submit(student.getId(), new CreateTimeLogRequest(
+                formOpenedFor, DAY, LocalTime.parse("08:00"), LocalTime.parse("17:00"), false, 60, "work")))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("active placement has changed");
+
+        // The draft landed nowhere: not on the old placement, and not silently on the new one.
+        assertThat(logs.findByPlacementIdOrderByLogDateDesc(formOpenedFor)).isEmpty();
+        assertThat(logs.findByPlacementIdOrderByLogDateDesc(newPlacement.getId())).isEmpty();
     }
 
     // ---- helpers ----

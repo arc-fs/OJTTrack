@@ -43,11 +43,23 @@ public class TimeLogService {
         this.clock = clock;
     }
 
-    /** A new log always goes to the student's ACTIVE placement (never one chosen by the client). */
+    /**
+     * A new log goes to the student's ACTIVE placement, and only if that is the placement
+     * the form was opened for. The comparison happens while holding the placement row
+     * lock (the same lock a transfer approval takes), so a transfer can never slip in
+     * between the check and the insert: either the log lands on the intended placement
+     * first, or the transfer wins and this request gets a 409.
+     */
     @Transactional
-    public TimeLogResponse submit(Integer studentId, TimeLogRequest request) {
+    public TimeLogResponse submit(Integer studentId, CreateTimeLogRequest request) {
         Placement placement = placements.findForUpdateByStudentIdAndStatus(studentId, PlacementStatus.ACTIVE)
                 .orElseThrow(() -> conflict("You don't have an active placement to log hours for"));
+        // Compared with the logged-in student's own placement, so another student's id
+        // simply doesn't match (same 409, nothing revealed).
+        if (!placement.getId().equals(request.placementId())) {
+            throw conflict("Your active placement has changed since you opened this form. "
+                    + "Reload and check where this log belongs");
+        }
         validate(request, placement);
         if (logs.existsByPlacementIdAndLogDate(placement.getId(), request.logDate())) {
             throw conflict("You already have a log for " + request.logDate()
@@ -62,10 +74,7 @@ public class TimeLogService {
 
     /** Correct a PENDING or RETURNED log; a RETURNED one is resubmitted as PENDING. */
     @Transactional
-    public TimeLogResponse edit(Integer studentId, Integer logId, TimeLogRequest request) {
-        if (request.version() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "version is required when editing a log");
-        }
+    public TimeLogResponse edit(Integer studentId, Integer logId, UpdateTimeLogRequest request) {
         TimeLog log = logs.findByIdAndStudentId(logId, studentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Time log not found"));
         Placement placement = placements.findByIdForUpdate(log.getPlacementId())
@@ -134,7 +143,7 @@ public class TimeLogService {
     }
 
     /** Shift rules (shared with the database CHECKs) plus the date rules that need the clock. */
-    private void validate(TimeLogRequest request, Placement placement) {
+    private void validate(TimeLogFields request, Placement placement) {
         String problem = TimeLog.shiftProblem(request.timeIn(), request.timeOut(),
                 request.endsNextDay(), request.breakMinutes());
         if (problem != null) {
