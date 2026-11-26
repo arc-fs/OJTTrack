@@ -78,7 +78,7 @@ public class TimeLogReviewService {
         return active.stream()
                 .map(p -> new CoordinatorPlacementResponse(
                         p.getId(), p.getStudentId(), students.get(p.getStudentId()), companies.get(p.getApplicationId()),
-                        p.getStartDate(), p.getEndDate(), p.getRequiredHours(),
+                        p.getRole(), p.getStartDate(), p.getEndDate(), p.getRequiredHours(),
                         TimeLogSummaryResponse.of(p, logs.findByPlacementIdOrderByLogDateDesc(p.getId()))))
                 .toList();
     }

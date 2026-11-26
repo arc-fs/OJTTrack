@@ -36,7 +36,8 @@ import org.springframework.web.server.ResponseStatusException;
 class CoordinatorPlacementControllerTest {
 
     private static final String APPROVE_BODY =
-            "{\"startDate\":\"2027-01-04\",\"endDate\":\"2027-04-30\",\"requiredHours\":486,\"note\":\"ok\"}";
+            "{\"role\":\"Web Developer Intern\",\"startDate\":\"2027-01-04\",\"endDate\":\"2027-04-30\","
+                    + "\"requiredHours\":486,\"note\":\"ok\"}";
 
     @Autowired
     MockMvc mvc;
@@ -57,7 +58,7 @@ class CoordinatorPlacementControllerTest {
                         .with(user(TestUsers.student(5))).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(APPROVE_BODY))
                 .andExpect(status().isForbidden());
-        verify(service, never()).approve(any(), any(), any(), any(), any(), any());
+        verify(service, never()).approve(any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -74,7 +75,7 @@ class CoordinatorPlacementControllerTest {
     @Test
     void approvePassesTermsAndCoordinatorToService() throws Exception {
         when(service.approve(eq(3), eq(7), eq(LocalDate.of(2027, 1, 4)), eq(LocalDate.of(2027, 4, 30)),
-                eq(486), eq("ok"))).thenReturn(response(PlacementRequestStatus.APPROVED));
+                eq(486), eq("Web Developer Intern"), eq("ok"))).thenReturn(response(PlacementRequestStatus.APPROVED));
 
         mvc.perform(post("/api/coordinator/placement-requests/7/approve")
                         .with(user(TestUsers.coordinator(3))).with(csrf())
@@ -89,30 +90,44 @@ class CoordinatorPlacementControllerTest {
                         .with(user(TestUsers.coordinator(3)))
                         .contentType(MediaType.APPLICATION_JSON).content(APPROVE_BODY))
                 .andExpect(status().isForbidden());
-        verify(service, never()).approve(any(), any(), any(), any(), any(), any());
+        verify(service, never()).approve(any(), any(), any(), any(), any(), any(), any());
     }
 
     @ParameterizedTest
     @ValueSource(strings = {
-            "{\"endDate\":\"2027-04-30\",\"requiredHours\":486}",                          // no startDate
-            "{\"startDate\":\"2027-01-04\",\"requiredHours\":486}",                        // no endDate
-            "{\"startDate\":\"2027-01-04\",\"endDate\":\"2027-04-30\"}",                   // no hours
-            "{\"startDate\":\"2027-01-04\",\"endDate\":\"2027-04-30\",\"requiredHours\":0}",
-            "{\"startDate\":\"2027-01-04\",\"endDate\":\"2027-04-30\",\"requiredHours\":-5}",
-            "{\"startDate\":\"2027-01-04\",\"endDate\":\"2027-04-30\",\"requiredHours\":5001}",
-            "{\"startDate\":\"not-a-date\",\"endDate\":\"2027-04-30\",\"requiredHours\":486}"
+            "{\"role\":\"Intern\",\"endDate\":\"2027-04-30\",\"requiredHours\":486}",        // no startDate
+            "{\"role\":\"Intern\",\"startDate\":\"2027-01-04\",\"requiredHours\":486}",      // no endDate
+            "{\"role\":\"Intern\",\"startDate\":\"2027-01-04\",\"endDate\":\"2027-04-30\"}", // no hours
+            "{\"role\":\"Intern\",\"startDate\":\"2027-01-04\",\"endDate\":\"2027-04-30\",\"requiredHours\":0}",
+            "{\"role\":\"Intern\",\"startDate\":\"2027-01-04\",\"endDate\":\"2027-04-30\",\"requiredHours\":-5}",
+            "{\"role\":\"Intern\",\"startDate\":\"2027-01-04\",\"endDate\":\"2027-04-30\",\"requiredHours\":5001}",
+            "{\"role\":\"Intern\",\"startDate\":\"not-a-date\",\"endDate\":\"2027-04-30\",\"requiredHours\":486}",
+            "{\"startDate\":\"2027-01-04\",\"endDate\":\"2027-04-30\",\"requiredHours\":486}",                   // no role
+            "{\"role\":\"   \",\"startDate\":\"2027-01-04\",\"endDate\":\"2027-04-30\",\"requiredHours\":486}" // blank role
     })
     void approveValidatesBody(String body) throws Exception {
         mvc.perform(post("/api/coordinator/placement-requests/7/approve")
                         .with(user(TestUsers.coordinator(3))).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest());
-        verify(service, never()).approve(any(), any(), any(), any(), any(), any());
+        verify(service, never()).approve(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void roleIsLimitedTo150Characters() throws Exception {   // placements.role VARCHAR(150)
+        String body = "{\"role\":\"" + "r".repeat(151) + "\",\"startDate\":\"2027-01-04\","
+                + "\"endDate\":\"2027-04-30\",\"requiredHours\":486}";
+
+        mvc.perform(post("/api/coordinator/placement-requests/7/approve")
+                        .with(user(TestUsers.coordinator(3))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
+        verify(service, never()).approve(any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
     void approvingAnotherCoordinatorsRequestIsNotFound() throws Exception {
-        when(service.approve(any(), any(), any(), any(), any(), any()))
+        when(service.approve(any(), any(), any(), any(), any(), any(), any()))
                 .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Placement request not found"));
 
         mvc.perform(post("/api/coordinator/placement-requests/7/approve")

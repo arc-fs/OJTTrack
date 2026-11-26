@@ -107,6 +107,6 @@ class DashboardDbTest {
         app.setStatus(ApplicationStatus.ACCEPTED);
         applications.saveAndFlush(app);
         return placements.saveAndFlush(Placement.activate(app.getId(), student.getId(),
-                LocalDate.of(2020, 1, 6), LocalDate.of(2020, 6, 30), 486));
+                LocalDate.of(2020, 1, 6), LocalDate.of(2020, 6, 30), 486, "Intern"));
     }
 }

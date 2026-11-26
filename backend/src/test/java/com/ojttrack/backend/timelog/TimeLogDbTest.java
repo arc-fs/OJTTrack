@@ -70,7 +70,7 @@ class TimeLogDbTest {
         app.setStatus(ApplicationStatus.ACCEPTED);
         applications.saveAndFlush(app);
         placement = placements.saveAndFlush(Placement.activate(app.getId(), student.getId(),
-                LocalDate.of(2027, 1, 4), LocalDate.of(2027, 4, 30), 486));
+                LocalDate.of(2027, 1, 4), LocalDate.of(2027, 4, 30), 486, "Intern"));
     }
 
     // ---- worked_minutes is calculated by PostgreSQL ----
@@ -278,7 +278,7 @@ class TimeLogDbTest {
         app.setStatus(ApplicationStatus.ACCEPTED);
         applications.saveAndFlush(app);
         return placements.saveAndFlush(Placement.activate(app.getId(), student.getId(),
-                LocalDate.of(2027, 1, 4), LocalDate.of(2027, 4, 30), requiredHours));
+                LocalDate.of(2027, 1, 4), LocalDate.of(2027, 4, 30), requiredHours, "Intern"));
     }
 
     private TimeLog reload(Integer id) {

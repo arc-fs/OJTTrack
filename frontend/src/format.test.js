@@ -5,6 +5,7 @@ import {
     dateProblem,
     formatMinutes,
     isEditable,
+    roleText,
     shiftMinutes,
     shiftProblem,
     toHHmm,
@@ -136,5 +137,16 @@ describe('changedFields', () => {
     it('ignores surrounding spaces in accomplishments but not real changes', () => {
         expect(changedFields({ ...saved, accomplishments: '  Built the login page ' }, saved)).toEqual([])
         expect(changedFields({ ...saved, accomplishments: 'Fixed bugs' }, saved)).toEqual(['accomplishments'])
+    })
+})
+
+describe('roleText', () => {
+    it('shows the recorded role', () => {
+        expect(roleText('Web Developer Intern')).toBe('Web Developer Intern')
+    })
+
+    it('says so when an older placement has no role', () => {
+        expect(roleText(null)).toBe('Role not recorded')
+        expect(roleText(undefined)).toBe('Role not recorded')
     })
 })

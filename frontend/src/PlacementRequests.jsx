@@ -5,8 +5,10 @@ import { apiFetch, apiJson } from './api.js'
 // The server re-checks everything; these only give faster feedback.
 const MAX_HOURS = 5000
 const MAX_NOTE = 500
+const MAX_ROLE = 150   // placements.role VARCHAR(150)
 
-function validateApproval({ startDate, endDate, requiredHours }) {
+function validateApproval({ role, startDate, endDate, requiredHours }) {
+    if (!role.trim()) return "Please enter the placement's role (job title)."
     if (!startDate || !endDate) return 'Please choose both a start and an end date.'
     if (endDate < startDate) return 'The end date must be on or after the start date.'   // ISO dates compare as strings
     const hours = Number(requiredHours)
@@ -26,7 +28,7 @@ function PlacementRequests() {
     // Which request has its form open, and whether it is approving or rejecting.
     const [openId, setOpenId] = useState(null)
     const [mode, setMode] = useState(null)
-    const [form, setForm] = useState({ startDate: '', endDate: '', requiredHours: '', note: '' })
+    const [form, setForm] = useState({ role: '', startDate: '', endDate: '', requiredHours: '', note: '' })
     const [formError, setFormError] = useState(null)
     const [submitting, setSubmitting] = useState(false)
 
@@ -40,7 +42,7 @@ function PlacementRequests() {
     function open(id, newMode) {
         setOpenId(id)
         setMode(newMode)
-        setForm({ startDate: '', endDate: '', requiredHours: '', note: '' })
+        setForm({ role: '', startDate: '', endDate: '', requiredHours: '', note: '' })
         setFormError(null)
         setSuccess(null)
     }
@@ -68,7 +70,13 @@ function PlacementRequests() {
                 return
             }
             url = `/api/coordinator/placement-requests/${request.id}/approve`
-            body = { startDate: form.startDate, endDate: form.endDate, requiredHours: Number(form.requiredHours), note }
+            body = {
+                role: form.role.trim(),
+                startDate: form.startDate,
+                endDate: form.endDate,
+                requiredHours: Number(form.requiredHours),
+                note,
+            }
         } else {
             url = `/api/coordinator/placement-requests/${request.id}/reject`
             body = { note }
@@ -117,6 +125,9 @@ function PlacementRequests() {
                                 <form onSubmit={(e) => handleDecide(e, r)}>
                                     {mode === 'approve' && (
                                         <>
+                                            <label htmlFor={`role-${r.id}`}>Role (job title)</label>
+                                            <input id={`role-${r.id}`} required maxLength={MAX_ROLE} value={form.role}
+                                                   onChange={(e) => update('role', e.target.value)} />
                                             <label htmlFor={`start-${r.id}`}>Start date</label>
                                             <input id={`start-${r.id}`} type="date" value={form.startDate}
                                                    onChange={(e) => update('startDate', e.target.value)} />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiFetch } from './api.js'
-import { formatMinutes } from './format.js'
+import { formatMinutes, roleText } from './format.js'
 import { statusLabel } from './requirements.js'
 
 /**
@@ -108,7 +108,9 @@ function CoordinatorDashboard({ active, goTo }) {
                                     <td>{s.fullName}</td>
                                     <td>
                                         <span className="cell-label">Placement</span>
-                                        {s.placement ? `${s.placement.companyName} (${s.placement.status})` : '—'}
+                                        {s.placement
+                                            ? `${s.placement.companyName} · ${roleText(s.placement.role)} (${s.placement.status})`
+                                            : '—'}
                                     </td>
                                     <td>
                                         <span className="cell-label">Progress</span>

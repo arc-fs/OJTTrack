@@ -134,7 +134,7 @@ class PlacementServiceTest {
     void approveRejectsRequestOfAnotherCoordinatorsStudent() {
         givenPendingRequest(7, 100, null);
 
-        assertStatus(() -> service.approve(OTHER_COORDINATOR, 7, START, END, 486, null), HttpStatus.NOT_FOUND);
+        assertStatus(() -> service.approve(OTHER_COORDINATOR, 7, START, END, 486, "Intern", null), HttpStatus.NOT_FOUND);
         verify(placements, never()).save(any());
     }
 
@@ -143,7 +143,7 @@ class PlacementServiceTest {
         PlacementRequest request = givenPendingRequest(7, 100, null);
         request.reject(COORDINATOR, "no");
 
-        assertStatus(() -> service.approve(COORDINATOR, 7, START, END, 486, null), HttpStatus.CONFLICT);
+        assertStatus(() -> service.approve(COORDINATOR, 7, START, END, 486, "Intern", null), HttpStatus.CONFLICT);
         verify(placements, never()).save(any());
     }
 
@@ -152,7 +152,17 @@ class PlacementServiceTest {
         givenPendingRequest(7, 100, null);
         givenApplication(100, STUDENT, ApplicationStatus.ACCEPTED);
 
-        assertStatus(() -> service.approve(COORDINATOR, 7, END, START, 486, null), HttpStatus.BAD_REQUEST);
+        assertStatus(() -> service.approve(COORDINATOR, 7, END, START, 486, "Intern", null), HttpStatus.BAD_REQUEST);
+        verify(placements, never()).save(any());
+    }
+
+    @Test
+    void approveRequiresARole() {   // the DTO checks too; this guards direct service callers
+        givenPendingRequest(7, 100, null);
+        givenApplication(100, STUDENT, ApplicationStatus.ACCEPTED);
+
+        assertStatus(() -> service.approve(COORDINATOR, 7, START, END, 486, "   ", null), HttpStatus.BAD_REQUEST);
+        assertStatus(() -> service.approve(COORDINATOR, 7, START, END, 486, null, null), HttpStatus.BAD_REQUEST);
         verify(placements, never()).save(any());
     }
 
@@ -161,7 +171,7 @@ class PlacementServiceTest {
         givenPendingRequest(7, 100, null);
         givenApplication(100, STUDENT, ApplicationStatus.WITHDRAWN);
 
-        assertStatus(() -> service.approve(COORDINATOR, 7, START, END, 486, null), HttpStatus.CONFLICT);
+        assertStatus(() -> service.approve(COORDINATOR, 7, START, END, 486, "Intern", null), HttpStatus.CONFLICT);
         verify(placements, never()).save(any());
     }
 
@@ -172,7 +182,7 @@ class PlacementServiceTest {
         givenApplication(100, STUDENT, ApplicationStatus.ACCEPTED);
         givenActivePlacementForUpdate(placement(500, 90));
 
-        assertStatus(() -> service.approve(COORDINATOR, 7, START, END, 486, null), HttpStatus.CONFLICT);
+        assertStatus(() -> service.approve(COORDINATOR, 7, START, END, 486, "Intern", null), HttpStatus.CONFLICT);
         verify(placements, never()).save(any());
         verify(placements, never()).saveAndFlush(any());
     }
@@ -182,11 +192,13 @@ class PlacementServiceTest {
         PlacementRequest request = givenPendingRequest(7, 100, null);
         givenApplication(100, STUDENT, ApplicationStatus.ACCEPTED);
 
-        PlacementRequestResponse response = service.approve(COORDINATOR, 7, START, END, 486, "  ok  ");
+        PlacementRequestResponse response =
+                service.approve(COORDINATOR, 7, START, END, 486, "  Web Developer Intern  ", "  ok  ");
 
         ArgumentCaptor<Placement> saved = ArgumentCaptor.forClass(Placement.class);
         verify(placements).save(saved.capture());
         assertThat(saved.getValue().getStatus()).isEqualTo(PlacementStatus.ACTIVE);
+        assertThat(saved.getValue().getRole()).isEqualTo("Web Developer Intern");   // stored trimmed
         assertThat(saved.getValue().getApplicationId()).isEqualTo(100);
         assertThat(saved.getValue().getStudentId()).isEqualTo(STUDENT);
         assertThat(saved.getValue().getRequiredHours()).isEqualTo(486);
@@ -202,7 +214,7 @@ class PlacementServiceTest {
         givenApplication(100, STUDENT, ApplicationStatus.ACCEPTED);
         givenActivePlacementForUpdate(old);
 
-        service.approve(COORDINATOR, 7, START, END, 486, null);
+        service.approve(COORDINATOR, 7, START, END, 486, "Intern", null);
 
         assertThat(old.getStatus()).isEqualTo(PlacementStatus.TERMINATED);
         assertThat(old.getEndedAt()).isNotNull();
@@ -259,7 +271,7 @@ class PlacementServiceTest {
     }
 
     private static Placement placement(int id, int applicationId) {
-        Placement placement = Placement.activate(applicationId, STUDENT, START, END, 486);
+        Placement placement = Placement.activate(applicationId, STUDENT, START, END, 486, "Intern");
         ReflectionTestUtils.setField(placement, "id", id);
         return placement;
     }

@@ -42,6 +42,7 @@ class PlacementDbTest {
     @Autowired PlacementRepository placements;
     @Autowired PlacementRequestRepository requests;
     @Autowired PlacementService service;
+    @Autowired jakarta.persistence.EntityManager em;
 
     AppUser coordinator;
     AppUser student;
@@ -60,22 +61,22 @@ class PlacementDbTest {
     void studentCannotHaveTwoActivePlacements() {
         JobApplication first = acceptedApplication(student, "First Co");
         JobApplication second = acceptedApplication(student, "Second Co");
-        placements.saveAndFlush(Placement.activate(first.getId(), student.getId(), START, END, 486));
+        placements.saveAndFlush(Placement.activate(first.getId(), student.getId(), START, END, 486, "Intern"));
 
         assertThatThrownBy(() -> placements.saveAndFlush(
-                Placement.activate(second.getId(), student.getId(), START, END, 486)))
+                Placement.activate(second.getId(), student.getId(), START, END, 486, "Intern")))
                 .isInstanceOf(DataIntegrityViolationException.class);   // ux_placements_one_active_per_student
     }
 
     @Test
     void applicationCannotProduceTwoPlacements() {
         JobApplication app = acceptedApplication(student, "Acme");
-        Placement first = placements.saveAndFlush(Placement.activate(app.getId(), student.getId(), START, END, 486));
+        Placement first = placements.saveAndFlush(Placement.activate(app.getId(), student.getId(), START, END, 486, "Intern"));
         first.terminate();
         placements.saveAndFlush(first);
 
         assertThatThrownBy(() -> placements.saveAndFlush(
-                Placement.activate(app.getId(), student.getId(), START, END, 486)))
+                Placement.activate(app.getId(), student.getId(), START, END, 486, "Intern")))
                 .isInstanceOf(DataIntegrityViolationException.class);   // UNIQUE (application_id)
     }
 
@@ -84,7 +85,7 @@ class PlacementDbTest {
         JobApplication app = acceptedApplication(student, "Acme");
 
         assertThatThrownBy(() -> placements.saveAndFlush(
-                Placement.activate(app.getId(), otherStudent.getId(), START, END, 486)))
+                Placement.activate(app.getId(), otherStudent.getId(), START, END, 486, "Intern")))
                 .isInstanceOf(DataIntegrityViolationException.class);   // composite FK (application_id, student_id)
     }
 
@@ -93,8 +94,35 @@ class PlacementDbTest {
         JobApplication app = acceptedApplication(student, "Acme");
 
         assertThatThrownBy(() -> placements.saveAndFlush(
-                Placement.activate(app.getId(), student.getId(), END, START, 486)))
+                Placement.activate(app.getId(), student.getId(), END, START, 486, "Intern")))
                 .isInstanceOf(DataIntegrityViolationException.class);   // chk_placements_dates
+    }
+
+    // ---- role (V8) ----
+
+    @Test
+    void aPlacementWithoutRoleIsAllowedForOldRows() {   // placements created before V8 have none
+        JobApplication app = acceptedApplication(student, "Acme");
+
+        Integer id = ((Number) em.createNativeQuery("INSERT INTO placements "
+                        + "(application_id, student_id, status, start_date, end_date, required_hours) VALUES ("
+                        + app.getId() + ", " + student.getId() + ", 'ACTIVE', DATE '2027-01-04', DATE '2027-04-30', 486) "
+                        + "RETURNING id")
+                .getSingleResult()).intValue();
+        em.clear();
+
+        assertThat(placements.findById(id)).get().extracting(Placement::getRole).isNull();
+    }
+
+    @Test
+    void aBlankRoleIsRejectedByTheDatabase() {
+        JobApplication app = acceptedApplication(student, "Acme");
+
+        assertThatThrownBy(() -> em.createNativeQuery("INSERT INTO placements "
+                        + "(application_id, student_id, status, start_date, end_date, required_hours, role) VALUES ("
+                        + app.getId() + ", " + student.getId() + ", 'ACTIVE', DATE '2027-01-04', DATE '2027-04-30', 486, '   ')")
+                .executeUpdate())
+                .hasStackTraceContaining("chk_placements_role_not_blank");
     }
 
     @Test
@@ -116,7 +144,7 @@ class PlacementDbTest {
         JobApplication second = acceptedApplication(student, "Second Co");
 
         var activation = service.submit(student.getId(), first.getId(), null);
-        service.approve(coordinator.getId(), activation.id(), START, END, 486, null);
+        service.approve(coordinator.getId(), activation.id(), START, END, 486, "Intern", null);
 
         var change = service.submit(student.getId(), second.getId(), "better fit");
         assertThat(change.type()).isEqualTo("CHANGE");
@@ -124,13 +152,17 @@ class PlacementDbTest {
         assertThat(placements.findByStudentIdAndStatus(student.getId(), PlacementStatus.ACTIVE))
                 .get().extracting(Placement::getApplicationId).isEqualTo(first.getId());
 
-        service.approve(coordinator.getId(), change.id(), START, END, 486, null);
+        service.approve(coordinator.getId(), change.id(), START, END, 486, "  Web Developer Intern ", null);
         placements.flush();
+        em.clear();   // read back what PostgreSQL stored, not the cached entity
 
         List<Placement> history = placements.findByStudentIdOrderByCreatedAtDesc(student.getId());
         assertThat(history).hasSize(2);
         assertThat(history).filteredOn(p -> p.getStatus() == PlacementStatus.ACTIVE)
-                .singleElement().extracting(Placement::getApplicationId).isEqualTo(second.getId());
+                .singleElement().satisfies(p -> {
+                    assertThat(p.getApplicationId()).isEqualTo(second.getId());
+                    assertThat(p.getRole()).isEqualTo("Web Developer Intern");   // saved, trimmed
+                });
         assertThat(history).filteredOn(p -> p.getStatus() == PlacementStatus.TERMINATED)
                 .singleElement().satisfies(p -> {
                     assertThat(p.getApplicationId()).isEqualTo(first.getId());
@@ -143,7 +175,7 @@ class PlacementDbTest {
         JobApplication first = acceptedApplication(student, "First Co");
         JobApplication second = acceptedApplication(student, "Second Co");
         var activation = service.submit(student.getId(), first.getId(), null);
-        service.approve(coordinator.getId(), activation.id(), START, END, 486, null);
+        service.approve(coordinator.getId(), activation.id(), START, END, 486, "Intern", null);
 
         var change = service.submit(student.getId(), second.getId(), null);
         service.reject(coordinator.getId(), change.id(), "stay");
