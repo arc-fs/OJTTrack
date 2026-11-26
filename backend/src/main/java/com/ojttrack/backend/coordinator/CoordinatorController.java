@@ -43,8 +43,25 @@ public class CoordinatorController {
         if (users.existsByEmail(request.email())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "An account with that email already exists");
         }
-        AppUser student = users.save(AppUser.student(
-                request.email(), encoder.encode(request.password()), request.fullName(), coordinator.getId()));
-        return StudentResponse.from(student);
+        AppUser student = AppUser.student(
+                request.email(), encoder.encode(request.password()), request.fullName(), coordinator.getId());
+        student.setPlacementSearchStartsOn(request.placementSearchStartsOn());   // optional
+        return StudentResponse.from(users.save(student));
+    }
+
+    /**
+     * Set or clear when a student is expected to start looking for a placement. From that
+     * date, a student without an active or completed placement is flagged on the dashboard.
+     * Only the student's own coordinator can change it (404 for anyone else's student).
+     */
+    @PutMapping("/students/{id}/placement-search-start")
+    public StudentResponse setPlacementSearchStart(@PathVariable Integer id,
+                                                   @RequestBody PlacementSearchStartRequest request,
+                                                   @AuthenticationPrincipal AppUserDetails coordinator) {
+        AppUser student = users.findById(id)
+                .filter(u -> coordinator.getId().equals(u.getCoordinatorId()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found"));
+        student.setPlacementSearchStartsOn(request.date());
+        return StudentResponse.from(users.save(student));
     }
 }

@@ -17,6 +17,10 @@ function validate({ email, fullName, password }) {
     return null
 }
 
+const SEARCH_START_HELP = 'From the placement search start date, a student who still has no active or completed '
+    + 'placement appears under "Needs attention" on your dashboard as "No placement yet". '
+    + 'Leave it empty to never flag them.'
+
 function CoordinatorPage() {
     const [students, setStudents] = useState([])
     const [loading, setLoading] = useState(true)
@@ -25,9 +29,14 @@ function CoordinatorPage() {
     const [email, setEmail] = useState('')
     const [fullName, setFullName] = useState('')
     const [password, setPassword] = useState('')
+    const [searchStart, setSearchStart] = useState('')
     const [formError, setFormError] = useState(null)
     const [success, setSuccess] = useState(null)
     const [submitting, setSubmitting] = useState(false)
+
+    // Per-row edits of the search start date, kept apart from the loaded list (drafts).
+    const [dateDrafts, setDateDrafts] = useState({})   // studentId -> 'YYYY-MM-DD' or ''
+    const [rowMessage, setRowMessage] = useState(null)
 
     useEffect(() => {
         apiFetch('/api/coordinator/students')
@@ -41,7 +50,10 @@ function CoordinatorPage() {
         setFormError(null)
         setSuccess(null)
 
-        const input = { email: email.trim().toLowerCase(), fullName: fullName.trim(), password }
+        const input = {
+            email: email.trim().toLowerCase(), fullName: fullName.trim(), password,
+            placementSearchStartsOn: searchStart || null,
+        }
         const problem = validate(input)
         if (problem) {
             setFormError(problem)
@@ -57,10 +69,30 @@ function CoordinatorPage() {
             setEmail('')
             setFullName('')
             setPassword('')
+            setSearchStart('')
         } catch (err) {
             setFormError('Could not create student: ' + err.message)
         } finally {
             setSubmitting(false)
+        }
+    }
+
+    async function saveSearchStart(student, date) {
+        setRowMessage(null)
+        try {
+            const updated = await apiJson(`/api/coordinator/students/${student.id}/placement-search-start`, 'PUT',
+                { date: date || null })
+            setStudents((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
+            setDateDrafts((prev) => {
+                const next = { ...prev }
+                delete next[student.id]
+                return next
+            })
+            setRowMessage({ kind: 'status', text: date
+                ? `${student.fullName}: placement search starts on ${date}.`
+                : `${student.fullName}: search start date cleared; they won't be flagged as "No placement yet".` })
+        } catch (err) {
+            setRowMessage({ kind: 'alert', text: `Could not update ${student.fullName}: ${err.message}` })
         }
     }
 
@@ -97,6 +129,14 @@ function CoordinatorPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                 />
+                <label htmlFor="student-search-start">Placement search starts on (optional)</label>
+                <input
+                    id="student-search-start"
+                    type="date"
+                    value={searchStart}
+                    onChange={(e) => setSearchStart(e.target.value)}
+                />
+                <p>{SEARCH_START_HELP}</p>
                 <button type="submit" disabled={submitting}>
                     {submitting ? 'Creating...' : 'Create student'}
                 </button>
@@ -112,24 +152,42 @@ function CoordinatorPage() {
             ) : students.length === 0 ? (
                 <p>No students yet. Create one above.</p>
             ) : (
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Created</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {students.map((s) => (
-                            <tr key={s.id}>
-                                <td>{s.fullName}</td>
-                                <td>{s.email}</td>
-                                <td>{new Date(s.createdAt).toLocaleDateString()}</td>
+                <>
+                    <p>{SEARCH_START_HELP}</p>
+                    {rowMessage && <p role={rowMessage.kind}>{rowMessage.text}</p>}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Created</th>
+                                <th>Placement search starts on</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {students.map((s) => {
+                                const draft = dateDrafts[s.id] ?? s.placementSearchStartsOn ?? ''
+                                const changed = draft !== (s.placementSearchStartsOn ?? '')
+                                return (
+                                    <tr key={s.id}>
+                                        <td>{s.fullName}</td>
+                                        <td>{s.email}</td>
+                                        <td>{new Date(s.createdAt).toLocaleDateString()}</td>
+                                        <td>
+                                            <input type="date" value={draft}
+                                                   aria-label={`Placement search start for ${s.fullName}`}
+                                                   onChange={(e) => setDateDrafts((prev) => ({ ...prev, [s.id]: e.target.value }))} />
+                                            <button type="button" disabled={!changed}
+                                                    onClick={() => saveSearchStart(s, draft)}>Save</button>{' '}
+                                            <button type="button" disabled={!s.placementSearchStartsOn}
+                                                    onClick={() => saveSearchStart(s, '')}>Clear</button>
+                                        </td>
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
+                </>
             )}
         </div>
     )

@@ -2,6 +2,7 @@ package com.ojttrack.backend.user;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "users")
@@ -31,6 +32,11 @@ public class AppUser {
     @Column(name = "coordinator_id")
     private Integer coordinatorId;
 
+    // When this student is expected to start looking for a placement (V6). Set by the
+    // coordinator; drives the dashboard's "No placement yet" flag. Null = not set.
+    @Column(name = "placement_search_starts_on")
+    private LocalDate placementSearchStartsOn;
+
     protected AppUser() {}   // JPA needs this
 
     private AppUser(String email, String passwordHash, String fullName, Role role, Integer coordinatorId) {
@@ -54,6 +60,15 @@ public class AppUser {
         return new AppUser(email, passwordHash, fullName, Role.STUDENT, coordinatorId);
     }
 
+    /** Only students have this date (mirrors the V6 CHECK constraint). Null clears it. */
+    public void setPlacementSearchStartsOn(LocalDate date) {
+        if (role != Role.STUDENT && date != null) {
+            throw new IllegalStateException("Only students have a placement search start date");
+        }
+        this.placementSearchStartsOn = date;
+    }
+
+    public LocalDate getPlacementSearchStartsOn() { return placementSearchStartsOn; }
     public Integer getId() { return id; }
     public Integer getCoordinatorId() { return coordinatorId; }
     public String getEmail() { return email; }
