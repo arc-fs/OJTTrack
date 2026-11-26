@@ -3,6 +3,8 @@ import { getCurrentUser, logout } from './api.js'
 import ApplicationsPage from './ApplicationsPage.jsx'
 import CoordinatorPage from './CoordinatorPage.jsx'
 import Login from './Login.jsx'
+import PlacementRequests from './PlacementRequests.jsx'
+import Tabs from './Tabs.jsx'
 
 function App() {
     // undefined = still checking the session, null = logged out, object = logged in
@@ -43,9 +45,21 @@ function App() {
                 <span>Signed in as {user.fullName} ({user.email})</span>{' '}
                 <button onClick={handleLogout}>Log out</button>
             </header>
-            {user.role === 'STUDENT' ? <ApplicationsPage /> : <CoordinatorPage />}
+            {/* key: a different user logging in starts with fresh tabs and no leftover drafts */}
+            <Tabs key={user.id} tabs={user.role === 'STUDENT' ? STUDENT_TABS : COORDINATOR_TABS} />
         </div>
     )
 }
+
+// ApplicationsPage contains the placement section on purpose: the two share state
+// (which applications are locked), so they stay together in one tab.
+const STUDENT_TABS = [
+    { id: 'applications', label: 'Applications & placement', render: () => <ApplicationsPage /> },
+]
+
+const COORDINATOR_TABS = [
+    { id: 'requests', label: 'Placement requests', render: () => <PlacementRequests /> },
+    { id: 'students', label: 'Students', render: () => <CoordinatorPage /> },
+]
 
 export default App
