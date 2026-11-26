@@ -46,7 +46,7 @@ function Login({ onLoggedIn }) {
                 <button type="submit" data-variant="primary" disabled={submitting}>
                     {submitting ? 'Logging in...' : 'Log in'}
                 </button>
-                {error && <p>{error}</p>}
+                {error && <p role="alert">{error}</p>}
             </form>
         </div>
     )
