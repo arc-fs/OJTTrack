@@ -68,6 +68,52 @@ class JobApplicationControllerTest {
                 .andExpect(jsonPath("$.status").value("REJECTED"));
     }
 
+    // ---- follow-up dates ----
+
+    @Test
+    void createStoresTheFollowUpDate() throws Exception {
+        when(repository.save(any(JobApplication.class))).thenAnswer(call -> call.getArgument(0));
+
+        mvc.perform(post("/api/applications")
+                        .with(user(TestUsers.student(5))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"companyName\":\"Acme\",\"status\":\"APPLIED\",\"followUpDate\":\"2026-12-01\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.followUpDate").value("2026-12-01"));
+    }
+
+    @Test
+    void statusChangeThatSendsTheDateKeepsIt() throws Exception {
+        JobApplication existing = application(5, "Acme");
+        existing.setFollowUpDate(java.time.LocalDate.of(2026, 12, 1));
+        when(repository.findByIdForUpdate(40)).thenReturn(Optional.of(existing));
+        when(repository.save(any(JobApplication.class))).thenAnswer(call -> call.getArgument(0));
+
+        // The frontend's status dropdown sends the current followUpDate along (PUT replaces all fields).
+        mvc.perform(put("/api/applications/40")
+                        .with(user(TestUsers.student(5))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"companyName\":\"Acme\",\"status\":\"INTERVIEW\",\"followUpDate\":\"2026-12-01\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("INTERVIEW"))
+                .andExpect(jsonPath("$.followUpDate").value("2026-12-01"));
+    }
+
+    @Test
+    void sendingNullClearsTheFollowUpDate() throws Exception {
+        JobApplication existing = application(5, "Acme");
+        existing.setFollowUpDate(java.time.LocalDate.of(2026, 12, 1));
+        when(repository.findByIdForUpdate(40)).thenReturn(Optional.of(existing));
+        when(repository.save(any(JobApplication.class))).thenAnswer(call -> call.getArgument(0));
+
+        mvc.perform(put("/api/applications/40")
+                        .with(user(TestUsers.student(5))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"companyName\":\"Acme\",\"status\":\"APPLIED\",\"followUpDate\":null}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.followUpDate").doesNotExist());
+    }
+
     @Test
     void updateOfApplicationWithPlacementIsAConflict() throws Exception {
         when(repository.findByIdForUpdate(40)).thenReturn(Optional.of(application(5, "Acme")));

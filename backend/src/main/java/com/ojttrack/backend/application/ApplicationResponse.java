@@ -1,6 +1,7 @@
 package com.ojttrack.backend.application;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 /**
  * What the API sends back for an application. Keeping this separate from the
@@ -11,6 +12,7 @@ public record ApplicationResponse(
         Integer id,
         String companyName,
         ApplicationStatus status,
+        LocalDate followUpDate,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -19,6 +21,7 @@ public record ApplicationResponse(
                 application.getId(),
                 application.getCompanyName(),
                 application.getStatus(),
+                application.getFollowUpDate(),
                 application.getCreatedAt(),
                 application.getUpdatedAt());
     }

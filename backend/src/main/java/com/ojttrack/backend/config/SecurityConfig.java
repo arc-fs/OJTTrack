@@ -24,6 +24,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/placements", "/api/placements/**",
                                 "/api/placement-requests", "/api/placement-requests/**").hasRole("STUDENT")
                         .requestMatchers("/api/time-logs", "/api/time-logs/**").hasRole("STUDENT")
+                        .requestMatchers("/api/dashboard").hasRole("STUDENT")
                         .requestMatchers("/api/coordinator/**").hasRole("COORDINATOR")
                         .anyRequest().authenticated()
                 )
