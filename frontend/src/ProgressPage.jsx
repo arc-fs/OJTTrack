@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { apiFetch, apiJson } from './api.js'
 import { formatMinutes } from './format.js'
 import ProgressCard from './ProgressCard.jsx'
+import { progressText, statusLabel } from './requirements.js'
 import TimeLogTable from './TimeLogTable.jsx'
 
 const MAX_REASON = 500   // stored as time_logs.feedback VARCHAR(500)
@@ -25,6 +26,7 @@ function ProgressPage({ active }) {
     const [unverifyingId, setUnverifyingId] = useState(null)
     const [busy, setBusy] = useState(false)
     const [message, setMessage] = useState(null)    // { kind: 'status' | 'alert', text }
+    const [requirements, setRequirements] = useState(null)   // { data } | { error } for the open student
 
     useEffect(() => {
         if (!active) return undefined
@@ -56,6 +58,18 @@ function ProgressPage({ active }) {
         return () => { cancelled = true }
     }, [active, openId, detailToken])
 
+    // The student's requirement summary is loaded on its own: if it fails, the logs and
+    // "Complete placement" still work, because requirements never block completion.
+    const openStudentId = placements.find((p) => p.placementId === openId)?.studentId ?? null
+    useEffect(() => {
+        if (!active || openStudentId === null) return undefined
+        let cancelled = false
+        apiFetch(`/api/coordinator/students/${openStudentId}/requirements`)
+            .then((data) => !cancelled && setRequirements({ data }))
+            .catch((err) => !cancelled && setRequirements({ error: err.message }))
+        return () => { cancelled = true }
+    }, [active, openStudentId, detailToken])
+
     function reloadAll() {
         setListToken((t) => t + 1)
         setDetailToken((t) => t + 1)
@@ -65,6 +79,7 @@ function ProgressPage({ active }) {
         setMessage(null)
         setDetails(null)
         setDetailError(null)
+        setRequirements(null)
         setUnverifyingId(null)
         setOpenId(placementId)
         // Re-opening the same placement ("Reload") doesn't change openId, and React only
@@ -160,6 +175,7 @@ function ProgressPage({ active }) {
                                 Complete placement
                             </button>
                             {!canComplete && completeHint && <span> {completeHint}.</span>}
+                            <RequirementsSummary state={requirements} />
 
                             <TimeLogTable
                                 logs={details.logs}
@@ -188,6 +204,32 @@ function ProgressPage({ active }) {
                 </section>
             )}
         </div>
+    )
+}
+
+/** The open student's requirements next to "Complete placement": informational only. */
+function RequirementsSummary({ state }) {
+    return (
+        <section aria-label="Requirements">
+            <h3>Requirements</h3>
+            <p>Requirements don&apos;t block completion. Review them before confirming. (Only requirements you created are counted.)</p>
+            {!state ? <p>Loading...</p>
+                : state.error ? <p role="alert">Could not load requirements: {state.error}</p> : (
+                    <>
+                        <p>{progressText(state.data, false)}</p>
+                        {state.data.overdue.length > 0 && (
+                            <>
+                                <p>Overdue:</p>
+                                <ul>
+                                    {state.data.overdue.map((o) => (
+                                        <li key={o.requirementId}>{o.title}: due {o.dueDate} ({statusLabel(o.status)})</li>
+                                    ))}
+                                </ul>
+                            </>
+                        )}
+                    </>
+                )}
+        </section>
     )
 }
 
