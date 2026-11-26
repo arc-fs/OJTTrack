@@ -5,8 +5,9 @@ import { useState } from 'react'
  * React keeps a component's state only while it is rendered, so this is what keeps
  * unsaved work (a half-typed log, coordinator feedback) when the user switches tabs.
  *
- * tabs: [{ id, label, render: (active) => JSX }]. `active` lets a page refresh its
- * lists when it becomes visible, without touching its form/draft state.
+ * tabs: [{ id, label, render: (active, goTo) => JSX }]. `active` lets a page refresh its
+ * lists when it becomes visible, without touching its form/draft state; goTo(id) lets
+ * a page (e.g. a dashboard) switch tabs. Drafts in other tabs survive, since all stay mounted.
  */
 function Tabs({ tabs }) {
     const [activeId, setActiveId] = useState(tabs[0].id)
@@ -27,7 +28,7 @@ function Tabs({ tabs }) {
             </nav>
             {tabs.map((tab) => (
                 <section key={tab.id} hidden={tab.id !== activeId}>
-                    {tab.render(tab.id === activeId)}
+                    {tab.render(tab.id === activeId, setActiveId)}
                 </section>
             ))}
         </div>

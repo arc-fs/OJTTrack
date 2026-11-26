@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { getCurrentUser, logout } from './api.js'
 import ApplicationsPage from './ApplicationsPage.jsx'
+import CoordinatorDashboard from './CoordinatorDashboard.jsx'
 import CoordinatorPage from './CoordinatorPage.jsx'
 import Login from './Login.jsx'
 import PlacementRequests from './PlacementRequests.jsx'
 import ProgressPage from './ProgressPage.jsx'
 import ReviewQueue from './ReviewQueue.jsx'
+import StudentDashboard from './StudentDashboard.jsx'
 import Tabs from './Tabs.jsx'
 import TimeLogsPage from './TimeLogsPage.jsx'
 
@@ -57,11 +59,13 @@ function App() {
 // ApplicationsPage contains the placement section on purpose: the two share state
 // (which applications are locked), so they stay together in one tab.
 const STUDENT_TABS = [
+    { id: 'dashboard', label: 'Dashboard', render: (active, goTo) => <StudentDashboard active={active} goTo={goTo} /> },
     { id: 'time-logs', label: 'Time logs', render: (active) => <TimeLogsPage active={active} /> },
     { id: 'applications', label: 'Applications & placement', render: () => <ApplicationsPage /> },
 ]
 
 const COORDINATOR_TABS = [
+    { id: 'dashboard', label: 'Dashboard', render: (active, goTo) => <CoordinatorDashboard active={active} goTo={goTo} /> },
     { id: 'review', label: 'Review queue', render: (active) => <ReviewQueue active={active} /> },
     { id: 'progress', label: 'Progress', render: (active) => <ProgressPage active={active} /> },
     { id: 'requests', label: 'Placement requests', render: () => <PlacementRequests /> },
