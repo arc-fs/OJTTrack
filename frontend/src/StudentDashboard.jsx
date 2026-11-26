@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiFetch } from './api.js'
+import { roleText } from './format.js'
 import ProgressCard from './ProgressCard.jsx'
 import { statusLabel } from './requirements.js'
 
@@ -43,7 +44,8 @@ function StudentDashboard({ active, goTo }) {
                     <p>No placement yet. <button type="button" onClick={() => goTo('applications')}>Go to Applications &amp; placement</button></p>
                 ) : (
                     <>
-                        <p><strong>{data.placement.companyName}</strong> ({data.placement.status}) ·{' '}
+                        <p><strong>{data.placement.companyName}</strong> · {roleText(data.placement.role)}{' '}
+                            ({data.placement.status}) ·{' '}
                             {data.placement.startDate} to {data.placement.endDate}</p>
                         <ProgressCard summary={progress}
                                       completionNote="Waiting for your coordinator to confirm completion." />

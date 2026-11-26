@@ -123,3 +123,8 @@ export function changedFields(draft, saved) {
     if ((draft.accomplishments ?? '').trim() !== (saved.accomplishments ?? '').trim()) fields.push('accomplishments')
     return fields
 }
+
+/** A placement's role, or the same honest wording everywhere for placements created before roles were recorded. */
+export function roleText(role) {
+    return role ?? 'Role not recorded'
+}

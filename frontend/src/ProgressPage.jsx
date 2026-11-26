@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiFetch, apiJson } from './api.js'
-import { formatMinutes } from './format.js'
+import { formatMinutes, roleText } from './format.js'
 import ProgressCard from './ProgressCard.jsx'
 import { progressText, statusLabel } from './requirements.js'
 import TimeLogTable from './TimeLogTable.jsx'
@@ -155,7 +155,7 @@ function ProgressPage({ active }) {
                     {placements.map((p) => (
                         <li key={p.placementId}>
                             <strong className="card-title">{p.studentName}</strong> · {p.companyName} ·{' '}
-                            {p.requiredHours} h required
+                            {roleText(p.role)} · {p.requiredHours} h required
                             <ProgressCard summary={p.progress} completionNote="Ready for you to confirm completion." />
                             <div className="card-actions">
                                 <button type="button" disabled={busy} onClick={() => open(p.placementId)}>
@@ -169,7 +169,7 @@ function ProgressPage({ active }) {
 
             {opened && (
                 <section aria-label="Open placement">
-                    <h2>{opened.studentName} at {opened.companyName}</h2>
+                    <h2>{opened.studentName} at {opened.companyName} · {roleText(opened.role)}</h2>
                     {detailError ? <p role="alert">Could not load this placement: {detailError}</p>
                         : !details ? <p>Loading...</p> : (
                         <>

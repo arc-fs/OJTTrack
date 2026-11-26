@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { apiJson } from './api.js'
+import { roleText } from './format.js'
 
 const MAX_REASON = 500   // placement_requests.reason VARCHAR(500)
 
@@ -56,7 +57,7 @@ function StudentPlacement({ applications, placements, requests, onSubmitted }) {
 
             {active ? (
                 <div>
-                    <p><strong>{active.companyName}</strong> (ACTIVE)</p>
+                    <p><strong>{active.companyName}</strong> · {roleText(active.role)} (ACTIVE)</p>
                     <p>{active.startDate} to {active.endDate} · {active.requiredHours} required hours</p>
                 </div>
             ) : (
