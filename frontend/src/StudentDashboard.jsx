@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiFetch } from './api.js'
 import ProgressCard from './ProgressCard.jsx'
+import { statusLabel } from './requirements.js'
 
 const STATUS_ORDER = ['PLANNED', 'APPLIED', 'INTERVIEW', 'OFFERED', 'ACCEPTED', 'REJECTED', 'WITHDRAWN']
 
@@ -69,6 +70,8 @@ function StudentDashboard({ active, goTo }) {
                 </section>
             )}
 
+            <RequirementsSection requirements={data.requirements} goTo={goTo} />
+
             <section aria-label="Follow-ups">
                 <h2>Follow-ups</h2>
                 {data.followUps.length === 0 ? <p>No follow-ups due in the next 7 days.</p> : (
@@ -99,6 +102,41 @@ function StudentDashboard({ active, goTo }) {
                 <button type="button" onClick={() => goTo('applications')}>Manage applications</button>
             </section>
         </div>
+    )
+}
+
+/** Overdue, due within 7 days, and returned requirements, as the server listed them. */
+function RequirementsSection({ requirements, goTo }) {
+    const { overdue, dueSoon, returned } = requirements
+    const item = (r) => (
+        <li key={r.assignmentId}>
+            {r.title}{r.dueDate && <>: due {r.dueDate}</>} ({statusLabel(r.status)})
+        </li>
+    )
+
+    return (
+        <section aria-label="Requirements">
+            <h2>Requirements</h2>
+            {overdue.length + dueSoon.length + returned.length === 0 ? (
+                <p>Nothing overdue or due in the next 7 days.</p>
+            ) : (
+                <>
+                    {overdue.length > 0 && <><h3>Overdue</h3><ul>{overdue.map(item)}</ul></>}
+                    {dueSoon.length > 0 && <><h3>Due within 7 days</h3><ul>{dueSoon.map(item)}</ul></>}
+                    {returned.length > 0 && (
+                        <>
+                            <h3>Returned for changes</h3>
+                            <ul>
+                                {returned.map((r) => (
+                                    <li key={r.assignmentId}>{r.title}: <em>{r.feedback}</em></li>
+                                ))}
+                            </ul>
+                        </>
+                    )}
+                </>
+            )}
+            <button type="button" onClick={() => goTo('requirements')}>Open Requirements</button>
+        </section>
     )
 }
 

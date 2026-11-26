@@ -8,6 +8,7 @@ import PlacementRequests from './PlacementRequests.jsx'
 import ProgressPage from './ProgressPage.jsx'
 import ReviewQueue from './ReviewQueue.jsx'
 import StudentDashboard from './StudentDashboard.jsx'
+import StudentRequirementsPage from './StudentRequirementsPage.jsx'
 import Tabs from './Tabs.jsx'
 import TimeLogsPage from './TimeLogsPage.jsx'
 
@@ -61,6 +62,7 @@ function App() {
 const STUDENT_TABS = [
     { id: 'dashboard', label: 'Dashboard', render: (active, goTo) => <StudentDashboard active={active} goTo={goTo} /> },
     { id: 'time-logs', label: 'Time logs', render: (active) => <TimeLogsPage active={active} /> },
+    { id: 'requirements', label: 'Requirements', render: (active) => <StudentRequirementsPage active={active} /> },
     { id: 'applications', label: 'Applications & placement', render: () => <ApplicationsPage /> },
 ]
 
