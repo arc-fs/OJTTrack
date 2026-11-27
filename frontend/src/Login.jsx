@@ -22,32 +22,35 @@ function Login({ onLoggedIn }) {
     }
 
     return (
-        <div>
-            <h1>OJTTrack</h1>
-            <form onSubmit={handleSubmit}>
-                <label htmlFor="email">Email</label>
-                <input
-                    id="email"
-                    type="email"
-                    autoComplete="username"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
-                <label htmlFor="password">Password</label>
-                <input
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
-                <button type="submit" data-variant="primary" disabled={submitting}>
-                    {submitting ? 'Logging in...' : 'Log in'}
-                </button>
-                {error && <p role="alert">{error}</p>}
-            </form>
+        <div className="standalone">
+            <div className="standalone-card">
+                <h1 className="brand">OJTTrack</h1>
+                <p className="muted">Sign in with the account your coordinator gave you.</p>
+                <form onSubmit={handleSubmit}>
+                    <label htmlFor="email">Email</label>
+                    <input
+                        id="email"
+                        type="email"
+                        autoComplete="username"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <label htmlFor="password">Password</label>
+                    <input
+                        id="password"
+                        type="password"
+                        autoComplete="current-password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <button type="submit" data-variant="primary" disabled={submitting}>
+                        {submitting ? 'Logging in…' : 'Log in'}
+                    </button>
+                    {error && <p role="alert">{error}</p>}
+                </form>
+            </div>
         </div>
     )
 }

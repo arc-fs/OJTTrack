@@ -1,0 +1,222 @@
+/* =====================================================================
+   App shell. Desktop: a sidebar (wordmark, sections, account) beside the
+   page. Below 960 px: a top bar with the sections underneath.
+   Tabs.jsx keeps its behavior (every panel stays mounted); .tabs uses
+   display: contents so its nav and panels sit directly in this grid.
+   ===================================================================== */
+
+.app {
+  display: grid;
+  grid-template-columns: var(--sidebar) minmax(0, 1fr);
+  grid-template-rows: auto auto auto 1fr;
+  grid-template-areas:
+    'brand   main'
+    'nav     main'
+    'account main'
+    '.       main';
+  min-height: 100vh;
+  /* The sidebar surface and its edge, drawn once behind the first column. */
+  background: linear-gradient(to right, var(--sheet) calc(var(--sidebar) - 1px),
+      var(--rule) calc(var(--sidebar) - 1px) var(--sidebar), var(--paper) var(--sidebar));
+}
+
+.tabs {
+  display: contents;
+}
+
+.brand {
+  grid-area: brand;
+  padding: 24px 20px 16px;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+/* The mark: a short ledger rule under the wordmark, nothing more. */
+.brand::after {
+  content: '';
+  display: block;
+  width: 28px;
+  height: 3px;
+  margin-top: 6px;
+  background: var(--ledger);
+}
+
+/* ---- section navigation ---- */
+.app nav[aria-label='Sections'] {
+  grid-area: nav;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+}
+
+.app nav[aria-label='Sections'] button {
+  display: block;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 12px;
+  margin: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--pencil);
+  font: 500 var(--text-sm) / 1.3 var(--sans);
+  text-align: left;
+  cursor: pointer;
+}
+
+.app nav[aria-label='Sections'] button:hover {
+  color: var(--ink);
+  background: var(--neutral-tint);
+}
+
+/* Active section: bold plus a ledger bar, so it never relies on color alone. */
+.app nav[aria-label='Sections'] button[aria-pressed='true'] {
+  color: var(--ink);
+  font-weight: 650;
+  background: var(--ledger-tint);
+  box-shadow: inset 3px 0 0 var(--ledger);
+}
+
+/* ---- signed-in account ---- */
+.account {
+  grid-area: account;
+  margin: 12px 20px 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+  font-size: var(--text-sm);
+}
+
+.account-name {
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.account-email {
+  display: block;
+  color: var(--pencil);
+  margin-bottom: 10px;
+}
+
+/* ---- the page ---- */
+.page {
+  grid-area: main;
+  width: 100%;
+  max-width: var(--content);
+  padding: 36px 40px 64px;
+  min-width: 0;
+}
+
+/* ---- below desktop: top bar plus a section bar ---- */
+@media (max-width: 959px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      'brand   account'
+      'nav     nav'
+      'main    main';
+    background: var(--paper);
+  }
+
+  .brand,
+  .account {
+    background: var(--sheet);
+  }
+
+  .brand {
+    padding: 14px 16px;
+  }
+
+  .brand::after {
+    display: none;
+  }
+
+  .account {
+    margin: 0;
+    padding: 8px 16px;
+    border-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .account-name {
+    max-width: 14ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .account-email {
+    display: none;   /* shown on desktop; the name is enough in a top bar */
+  }
+
+  /* The section bar scrolls inside itself; the page never scrolls sideways. */
+  .app nav[aria-label='Sections'] {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 0 8px;
+    background: var(--sheet);
+    border-bottom: 1px solid var(--rule);
+    scrollbar-width: thin;
+  }
+
+  .app nav[aria-label='Sections'] button {
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    border-radius: 0;
+    padding: 12px 12px;
+  }
+
+  .app nav[aria-label='Sections'] button[aria-pressed='true'] {
+    background: transparent;
+    box-shadow: inset 0 -3px 0 var(--ledger);
+  }
+
+  .page {
+    padding: 24px 24px 48px;
+  }
+}
+
+@media (max-width: 599px) {
+  .account-name {
+    display: none;   /* only Log out on the smallest screens */
+  }
+
+  .page {
+    padding: 20px 16px 40px;
+  }
+}
+
+/* ---- sign-in and app-level states (no shell yet) ---- */
+.standalone {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+}
+
+.standalone-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 32px 28px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-panel);
+}
+
+.standalone-card .brand {
+  padding: 0;
+  margin: 0 0 16px;
+  font-size: var(--text-xl);
+}
+
+.standalone-card form button[type='submit'] {
+  width: 100%;
+  margin-right: 0;
+}

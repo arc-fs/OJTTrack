@@ -13,7 +13,8 @@ function Tabs({ tabs }) {
     const [activeId, setActiveId] = useState(tabs[0].id)
 
     return (
-        <div>
+        // .tabs and .page place the nav and panels in the app shell (styles/layout.css).
+        <div className="tabs">
             <nav aria-label="Sections">
                 {tabs.map((tab) => (
                     <button
@@ -27,7 +28,7 @@ function Tabs({ tabs }) {
                 ))}
             </nav>
             {tabs.map((tab) => (
-                <section key={tab.id} hidden={tab.id !== activeId}>
+                <section key={tab.id} className="page" hidden={tab.id !== activeId}>
                     {tab.render(tab.id === activeId, setActiveId)}
                 </section>
             ))}

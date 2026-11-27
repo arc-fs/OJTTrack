@@ -1,0 +1,161 @@
+/* =====================================================================
+   Page layouts: the two dashboards and page headers.
+   ===================================================================== */
+
+.page-intro {
+  color: var(--pencil);
+  margin: -12px 0 24px;
+}
+
+/* ---- coordinator totals: one ruled strip, not a row of tiles ---- */
+.totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+  margin: 0 0 24px;
+  padding: 0 0 16px;
+  list-style: none;
+  border-bottom: 1px solid var(--rule);
+}
+
+.totals li {
+  margin: 0;
+  color: var(--pencil);
+  font-size: var(--text-sm);
+}
+
+.totals .figure {
+  display: block;
+  font-size: var(--text-xl);
+  font-weight: 650;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.totals button {
+  margin: 4px 0 0;
+}
+
+/* ---- needs attention: ruled rows, one per student ---- */
+.attention {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.attention > li {
+  display: grid;
+  grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr);
+  gap: 4px 16px;
+  padding: 12px 0;
+  margin: 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.attention > li:last-child {
+  border-bottom: 0;
+}
+
+.attention-flags {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.attention-flags > li {
+  margin: 0 0 6px;
+}
+
+/* A flag is a sentence, so it reads as text with a small mark, not a red tag:
+   several flags per student would otherwise turn the list into a wall of red. */
+.flag {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.flag-mark {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-badge);
+  background: var(--danger);
+  color: var(--sheet);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  transform: translateY(2px);
+}
+
+.attention-flags ul {
+  margin: 4px 0 0 24px;
+  font-size: var(--text-sm);
+  color: var(--pencil);
+}
+
+/* ---- a record's heading line: what it is on the left, its status on the right ---- */
+.record-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.record-title {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.record-head + .muted {
+  margin-top: 2px;
+}
+
+/* ---- student dashboard: placement first, then two columns ---- */
+.dashboard-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0 20px;
+  align-items: start;
+}
+
+/* Application counts: a compact ruled list of status and number. */
+.counts {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+}
+
+.counts li {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--text-sm);
+}
+
+.counts li span:last-child {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+@media (max-width: 959px) {
+  .dashboard-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 599px) {
+  .attention > li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .totals {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+  }
+}

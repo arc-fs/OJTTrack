@@ -1,0 +1,729 @@
+/* =====================================================================
+   Components: one system used on every page.
+   ===================================================================== */
+
+/* ---- buttons ----
+   Secondary (default): sheet with a rule border. Primary: filled ledger.
+   Danger: outlined red, only for the 4 actions that destroy data.
+   Quiet: text only, for Cancel and Close. Variants are opt-in via
+   data-variant; a new button stays secondary until someone chooses. */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 14px;
+  margin: 4px 8px 4px 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-control);
+  background: var(--sheet);
+  color: var(--ink);
+  font: 500 var(--text-sm) / 1.25 var(--sans);
+  text-align: center;
+  cursor: pointer;
+  max-width: 100%;
+  white-space: normal;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--pencil);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* A button right after an inline field (e.g. a date then Save) needs a gap too:
+   buttons only carry space on their right. */
+input + button,
+select + button {
+  margin-left: 8px;
+}
+
+button[data-variant='primary'] {
+  background: var(--ledger);
+  border-color: var(--ledger);
+  color: var(--on-ledger);
+  font-weight: 650;
+}
+
+button[data-variant='primary']:hover:not(:disabled) {
+  border-color: var(--ledger);
+  background: color-mix(in srgb, var(--ledger) 88%, var(--ink));
+}
+
+button[data-variant='danger'] {
+  background: transparent;
+  border: 2px solid var(--danger);
+  color: var(--danger);
+  font-weight: 650;
+}
+
+button[data-variant='danger']:hover:not(:disabled) {
+  border-color: var(--danger);
+  background: var(--danger-tint);
+}
+
+button[data-variant='quiet'] {
+  background: transparent;
+  border-color: transparent;
+  color: var(--pencil);
+}
+
+button[data-variant='quiet']:hover:not(:disabled) {
+  border-color: transparent;
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+/* ---- forms: label above the field, everywhere ---- */
+label[for] {
+  display: block;
+  margin: 14px 0 6px;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--pencil);
+}
+
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--field);
+  border-radius: var(--radius-control);
+  background: var(--sheet);
+  color: var(--ink);
+  font: 400 var(--text-md) / 1.4 var(--sans);
+  max-width: 100%;
+}
+
+input:not([type='checkbox']):not([type='radio']):hover,
+select:hover,
+textarea:hover {
+  border-color: var(--ink);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--ledger);
+  outline-offset: 0;
+  border-color: var(--ledger);
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled,
+input[readonly],
+textarea[readonly] {
+  background: var(--paper);
+  color: var(--pencil);
+}
+
+/* Inside a form, each field takes a readable width of its own line. */
+form input:not([type='checkbox']):not([type='radio']),
+form select,
+form textarea,
+textarea {
+  display: block;
+  width: 100%;
+  max-width: 36rem;
+}
+
+textarea {
+  min-height: 6em;
+  resize: vertical;
+}
+
+/* Checkboxes and radios sit beside their text. */
+label:has(> input[type='checkbox']),
+label:has(> input[type='radio']) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 16px 6px 0;
+  cursor: pointer;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--ledger);
+}
+
+fieldset {
+  min-width: 0;
+  margin: 16px 0;
+  padding: 12px 16px 16px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-panel);
+  max-width: 36rem;
+}
+
+legend {
+  padding: 0 6px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--pencil);
+}
+
+/* A list of checkboxes needs no bullets: the boxes already mark each item. */
+fieldset ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 4px 0;
+}
+
+form > button,
+form > div > button {
+  margin-top: 16px;
+}
+
+/* ---- panels: the one framed surface for a page section ---- */
+.panel,
+.page section[aria-label] {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-panel);
+  padding: 20px 24px;
+  margin: 0 0 20px;
+}
+
+/* A panel inside a panel would be a box in a box: nested sections stay flat. */
+.page section[aria-label] section[aria-label] {
+  border: 0;
+  padding: 0;
+  margin: 20px 0 0;
+  background: transparent;
+}
+
+/* ---- ledger tables: ruled rows, no boxes, no zebra ---- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--pencil);
+  padding: 8px 12px 8px 0;
+  border-bottom: 2px solid var(--ink);
+  white-space: nowrap;
+}
+
+td {
+  padding: 12px 12px 12px 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+td p {
+  margin: 4px 0;
+}
+
+/* Row actions sit at the table's right edge, so the empty space falls between
+   the data and the actions instead of trailing after them. */
+@media (min-width: 600px) {
+  td.actions {
+    text-align: right;
+    white-space: nowrap;
+    padding-right: 0;
+  }
+
+  td.actions button:last-child {
+    margin-right: 0;
+  }
+
+  /* A field in the actions cell (the search start date) stays at the column's
+     left edge with its header; only the buttons go to the right. */
+  td.actions .row-field {
+    float: left;
+    margin-right: 16px;
+  }
+
+  table:has(td.actions):not(:has(.row-field)) thead th:last-child {
+    text-align: right;
+    padding-right: 0;
+  }
+}
+
+/* The scrolling table (TimeLogTable): data-heavy, scrolls inside itself. */
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  /* Scroll shadow on the right while columns are hidden: the "local" cover
+     moves with the content and hides the "scroll" shadow at the end. */
+  background:
+    linear-gradient(to left, var(--sheet) 30%, transparent) right / 40px 100% no-repeat local,
+    radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.22), transparent) right / 14px 100% no-repeat scroll;
+}
+
+/* The first column (Date) stays visible while scrolling sideways. */
+.table-scroll th:first-child,
+.table-scroll td:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--sheet);
+  white-space: nowrap;   /* a date reads badly split over two lines */
+  padding-right: 16px;
+}
+
+.table-scroll td:first-child {
+  box-shadow: 1px 0 0 var(--rule);
+}
+
+.scroll-hint,
+.cell-label {
+  display: none;
+}
+
+/* ---- record cards (the card lists): flat, ruled, no shadow ---- */
+.card-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+
+.card-list > li {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-panel);
+  padding: 16px 20px;
+  margin: 0 0 12px;
+}
+
+/* Inside a panel, records are ruled rows, not cards in a box. Free-standing
+   lists (Review queue, Requirements, Placement requests) stay cards. */
+.page section[aria-label] .card-list > li {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  padding: 14px 0;
+  margin: 0;
+}
+
+.page section[aria-label] .card-list > li:last-child {
+  border-bottom: 0;
+}
+
+/* In a ruled row the row line already separates records, so the actions need
+   no divider of their own (it would make them look like part of the next row):
+   inline at the end of the row on wider screens, on their own line on phones. */
+.page section[aria-label] .card-list .card-actions {
+  display: inline;
+  margin: 0 0 0 4px;
+  padding: 0;
+  border-top: 0;
+}
+
+@media (max-width: 599px) {
+  .page section[aria-label] .card-list .card-actions {
+    display: block;
+    margin: 8px 0 0;
+  }
+}
+
+/* Search and filter fields side by side above a list. */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+  margin-bottom: 8px;
+}
+
+.filters > div {
+  flex: 1 1 14rem;
+  max-width: 20rem;
+}
+
+.filters input,
+.filters select {
+  width: 100%;
+}
+
+.card-list h2 {
+  font-size: var(--text-md);
+  margin: 0 0 4px;
+}
+
+.card-title {
+  font-weight: 650;
+  color: var(--ink);
+}
+
+/* Actions come last, behind a divider, in every card. */
+.card-actions {
+  display: block;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}
+
+/* ---- messages: banners with a side bar; the role carries the meaning ---- */
+[role='alert'],
+p[role='status']:not(.loading),
+[role='note'] {
+  max-width: none;
+  padding: 10px 14px;
+  border-left: 3px solid currentColor;
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+  color: var(--ink);
+}
+
+[role='alert'] {
+  background: var(--danger-tint);
+  border-left-color: var(--danger);
+  font-weight: 500;
+}
+
+p[role='status']:not(.loading) {
+  background: var(--ledger-tint);
+  border-left-color: var(--ledger);
+}
+
+[role='note'] {
+  background: var(--amber-tint);
+  border-left-color: var(--amber);
+}
+
+/* ---- status badges: small tags with a glyph per tone (not color alone) ---- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: var(--radius-badge);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+  vertical-align: 1px;
+  background: var(--neutral-tint);
+  color: var(--pencil);
+}
+
+.badge-success {
+  background: var(--ledger-tint);
+  color: var(--ledger);
+}
+
+.badge-waiting {
+  background: var(--amber-tint);
+  color: var(--amber);
+}
+
+.badge-problem {
+  background: var(--danger-tint);
+  color: var(--danger);
+}
+
+.badge-glyph {
+  font-size: 0.9em;
+}
+
+/* ---- the hours ledger (signature) ----
+   Verified: solid ledger. Pending review: amber hatching, "written in,
+   not yet signed". Remaining: empty, with a faint tick every 40 hours
+   (one 5-day work week); --tick is set inline from the required hours. */
+.ledger {
+  margin: 12px 0 8px;
+}
+
+.ledger-bar {
+  position: relative;
+  height: 14px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(to right, transparent 0 calc(var(--tick, 10%) - 1px),
+      var(--rule) calc(var(--tick, 10%) - 1px) var(--tick, 10%)),
+    var(--paper);
+}
+
+.ledger-verified,
+.ledger-pending {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.ledger-verified {
+  left: 0;
+  background: var(--ledger);
+}
+
+.ledger-pending {
+  background:
+    repeating-linear-gradient(-45deg, var(--amber) 0 2px, transparent 2px 6px),
+    var(--amber-tint);
+}
+
+.ledger-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+  color: var(--pencil);
+  font-variant-numeric: tabular-nums;
+}
+
+.ledger-facts li {
+  margin: 0;
+}
+
+.ledger-facts strong {
+  color: var(--ink);
+  font-size: var(--text-md);
+}
+
+.ledger-key {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 2px;
+  vertical-align: 0;
+}
+
+.ledger-key-verified {
+  background: var(--ledger);
+}
+
+.ledger-key-pending {
+  background:
+    repeating-linear-gradient(-45deg, var(--amber) 0 2px, transparent 2px 4px),
+    var(--amber-tint);
+}
+
+.ledger-key-remaining {
+  border: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.ledger-compact .ledger-bar {
+  height: 8px;
+}
+
+.ledger-compact {
+  margin: 6px 0 0;
+  min-width: 120px;
+}
+
+/* ---- loading and empty states ---- */
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--pencil);
+}
+
+.loading::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--rule);
+  border-top-color: var(--ledger);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading::before {
+    display: none;
+  }
+}
+
+.empty {
+  color: var(--pencil);
+  padding: 16px 0;
+}
+
+.muted {
+  color: var(--pencil);
+  font-size: var(--text-sm);
+}
+
+/* ---- <details> (history toggles) ---- */
+summary {
+  cursor: pointer;
+  color: var(--pencil);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  padding: 4px 0;
+}
+
+summary:hover {
+  color: var(--ink);
+}
+
+details[open] > summary {
+  color: var(--ink);
+}
+
+details ol,
+details ul {
+  font-size: var(--text-sm);
+  color: var(--pencil);
+}
+
+/* =====================================================================
+   Touch devices: comfortable targets (44 px, above WCAG 2.2 AA's 24 px).
+   ===================================================================== */
+@media (pointer: coarse) {
+  button,
+  select,
+  input:not([type='checkbox']):not([type='radio']) {
+    min-height: 44px;
+  }
+
+  button {
+    padding: 10px 16px;
+  }
+
+  summary {
+    min-height: 44px;
+    padding: 10px 0;
+  }
+
+  input[type='checkbox'],
+  input[type='radio'] {
+    width: 20px;
+    height: 20px;
+  }
+
+  .app nav[aria-label='Sections'] button {
+    min-height: 44px;
+  }
+}
+
+/* =====================================================================
+   Phones (< 600 px).
+   ===================================================================== */
+@media (max-width: 599px) {
+  h1 {
+    font-size: var(--text-xl);
+    margin-bottom: 16px;
+  }
+
+  h2 {
+    font-size: var(--text-lg);
+  }
+
+  /* Every field full width; 16 px text stops iOS zooming in. */
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    display: block;
+    width: 100%;
+    max-width: none;
+  }
+
+  fieldset {
+    max-width: none;
+  }
+
+  .panel,
+  .page section[aria-label] {
+    padding: 16px;
+  }
+
+  .card-list > li {
+    padding: 14px 16px;
+  }
+
+  /* The scrolling table: a hint, and columns that stay readable. */
+  .scroll-hint {
+    display: block;
+    font-size: var(--text-sm);
+    color: var(--pencil);
+  }
+
+  .table-scroll table {
+    min-width: 40rem;
+  }
+
+  /* Stacked tables: each row becomes a card. Desktop keeps the native
+     table. The in-cell labels (.cell-label) carry the meaning here, so the
+     header row isn't needed and is removed for everyone, not just visually. */
+  .stack-table,
+  .stack-table tbody,
+  .stack-table tr,
+  .stack-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .stack-table thead {
+    display: none;
+  }
+
+  .stack-table tr {
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-panel);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  /* Inside a panel, a stacked row is a ruled ledger row, not a card in a box. */
+  .page section[aria-label] .stack-table tr {
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--rule);
+    border-radius: 0;
+    padding: 12px 0;
+    margin: 0;
+  }
+
+  .page section[aria-label] .stack-table tr:last-child {
+    border-bottom: 0;
+  }
+
+  .stack-table td {
+    padding: 3px 0;
+    border: 0;
+  }
+
+  .stack-table td:first-child {
+    font-size: var(--text-md);
+    font-weight: 650;
+    margin-bottom: 4px;
+  }
+
+  .stack-table td.actions {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .stack-table .cell-label {
+    display: inline;
+    margin-right: 6px;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--pencil);
+  }
+}

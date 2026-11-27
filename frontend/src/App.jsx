@@ -42,15 +42,27 @@ function App() {
         }
     }
 
-    if (error) return <p role="alert">Could not reach the server: {error}</p>
-    if (user === undefined) return <p>Loading...</p>
+    if (error) {
+        return (
+            <div className="standalone">
+                <p role="alert">Could not reach the server: {error}</p>
+            </div>
+        )
+    }
+    if (user === undefined) {
+        return <div className="standalone"><p className="loading" role="status">Loading…</p></div>
+    }
     if (user === null) return <Login onLoggedIn={handleLoggedIn} />
 
+    // .app is the shell grid (styles/layout.css): wordmark, sections and account in a
+    // sidebar on desktop, a top bar below 960 px. Tabs places its nav and panels in it.
     return (
-        <div>
-            <header>
-                <span>Signed in as {user.fullName} ({user.email})</span>{' '}
-                <button onClick={handleLogout}>Log out</button>
+        <div className="app">
+            <div className="brand">OJTTrack</div>
+            <header className="account" aria-label="Signed in">
+                <span className="account-name">{user.fullName}</span>
+                <span className="account-email">{user.email}</span>
+                <button type="button" onClick={handleLogout}>Log out</button>
             </header>
             {/* key: a different user logging in starts with fresh tabs and no leftover drafts */}
             <Tabs key={user.id} tabs={user.role === 'STUDENT' ? STUDENT_TABS : COORDINATOR_TABS} />

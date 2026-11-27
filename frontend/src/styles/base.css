@@ -1,0 +1,95 @@
+/* =====================================================================
+   Base: elements before any component. Sentence case, left-aligned,
+   tabular figures so hours and dates line up like a ledger.
+   ===================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font: 400 var(--text-md) / 1.5 var(--sans);
+  color: var(--ink);
+  background: var(--paper);
+  overflow-wrap: break-word;   /* long emails or company names wrap instead of widening the page */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3 {
+  color: var(--ink);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: var(--text-2xl);
+  font-weight: 650;
+  margin: 0 0 20px;
+}
+
+h2 {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+h3 {
+  font-size: var(--text-md);
+  font-weight: 600;
+  margin: 20px 0 8px;
+}
+
+p {
+  margin: 8px 0;
+  max-width: 70ch;
+}
+
+ul,
+ol {
+  margin: 8px 0;
+  padding-left: 1.25rem;
+}
+
+li + li {
+  margin-top: 4px;
+}
+
+strong {
+  font-weight: 600;
+}
+
+/* Hours, dates and counts line up in columns. */
+td,
+.figure,
+time {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Keyboard focus: always visible, never removed. */
+:focus-visible {
+  outline: 3px solid var(--ledger);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,0 +1,74 @@
+/* =====================================================================
+   Design tokens: "the logbook, done properly".
+   The palette comes from the OJT logbook and record sheet: a cool paper,
+   green-black ink, ruled lines, and ledger green for anything officially
+   counted (verified hours). Amber means "written in, not yet signed";
+   danger means a problem or an action that destroys data.
+   Every text pairing was checked for contrast in both themes (>= 4.5:1).
+   ===================================================================== */
+
+@font-face {
+  font-family: 'Public Sans';
+  /* SIL Open Font License 1.1, see /fonts/OFL.txt. Variable weight axis 100-900. */
+  src: url('/fonts/PublicSans-Variable.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --paper: #f6f8f7;      /* page background: cool, slightly green-gray */
+  --sheet: #ffffff;      /* surfaces: sidebar, panels, records */
+  --ink: #1d2a26;        /* text and headings */
+  --pencil: #5b6863;     /* secondary text and labels (5.4:1 on paper) */
+  --rule: #d8dfdb;       /* borders and ledger lines (decorative) */
+  --field: #7d8a85;      /* form field outlines: >= 3:1 on sheet and paper, so a field's edge is visible (WCAG 1.4.11) */
+  --ledger: #1f6b52;     /* brand, primary actions, verified (white on it 6.4:1) */
+  --on-ledger: #ffffff;
+  --amber: #9a5a06;      /* waiting: pending review, due soon (5.5:1) */
+  --danger: #b3261e;     /* problems and data-destroying actions (6.5:1) */
+
+  /* Tints for badges and banners, derived so both themes stay in step. */
+  --ledger-tint: color-mix(in srgb, var(--ledger) 10%, var(--sheet));
+  --amber-tint: color-mix(in srgb, var(--amber) 12%, var(--sheet));
+  --danger-tint: color-mix(in srgb, var(--danger) 9%, var(--sheet));
+  --neutral-tint: color-mix(in srgb, var(--pencil) 10%, var(--sheet));
+
+  --sans: 'Public Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  /* Type scale: 1.2 ratio from a 16 px base. */
+  --text-xs: 13px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 19px;
+  --text-xl: 23px;
+  --text-2xl: 28px;
+
+  /* Radius signals hierarchy: panels > controls > badges. */
+  --radius-panel: 8px;
+  --radius-control: 6px;
+  --radius-badge: 4px;
+
+  --sidebar: 232px;
+  --content: 1120px;
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #141a18;
+    --sheet: #1b2320;
+    --ink: #e2e9e5;
+    --pencil: #9aa7a1;
+    --rule: #2d3934;
+    --field: #6a7973;
+    --ledger: #6cc4a0;
+    --on-ledger: #10201a;
+    --amber: #e3ac52;
+    --danger: #ffb4ab;
+    --ledger-tint: color-mix(in srgb, var(--ledger) 14%, var(--sheet));
+    --amber-tint: color-mix(in srgb, var(--amber) 14%, var(--sheet));
+    --danger-tint: color-mix(in srgb, var(--danger) 12%, var(--sheet));
+  }
+}
