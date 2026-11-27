@@ -5,6 +5,7 @@ import {
     dateProblem,
     formatMinutes,
     isEditable,
+    hoursLedger,
     roleText,
     shiftMinutes,
     shiftProblem,
@@ -148,5 +149,25 @@ describe('roleText', () => {
     it('says so when an older placement has no role', () => {
         expect(roleText(null)).toBe('Role not recorded')
         expect(roleText(undefined)).toBe('Role not recorded')
+    })
+})
+
+describe('hoursLedger', () => {
+    it('splits the bar into verified and pending, with a tick every 40-hour week', () => {
+        const ledger = hoursLedger({ verifiedMinutes: 120 * 60, pendingMinutes: 16 * 60, requiredMinutes: 480 * 60 })
+        expect(ledger.verifiedPercent).toBe(25)
+        expect(ledger.pendingPercent).toBeCloseTo(3.333, 2)
+        expect(ledger.tickPercent).toBeCloseTo(8.333, 2)   // 40 of 480 hours
+        expect(ledger.label).toBe('120 h of 480 h verified, 16 h pending review')
+    })
+
+    it('never overflows when verified hours pass the requirement', () => {
+        const ledger = hoursLedger({ verifiedMinutes: 500 * 60, pendingMinutes: 8 * 60, requiredMinutes: 480 * 60 })
+        expect(ledger.verifiedPercent).toBe(100)
+        expect(ledger.pendingPercent).toBe(0)
+    })
+
+    it('handles a placement without required hours', () => {
+        expect(hoursLedger({ requiredMinutes: 0 })).toMatchObject({ verifiedPercent: 0, tickPercent: null })
     })
 })

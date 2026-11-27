@@ -128,3 +128,23 @@ export function changedFields(draft, saved) {
 export function roleText(role) {
     return role ?? 'Role not recorded'
 }
+
+const WEEK_MINUTES = 40 * 60   // one 5-day work week of 8-hour days
+
+/**
+ * The geometry of the hours ledger (ProgressCard), from the server's summary:
+ * how much of the bar is verified, how much is pending review, where the weekly
+ * ticks fall, and a full sentence for screen readers. Percentages are clamped so
+ * the bar never overflows when verified hours exceed the requirement.
+ */
+export function hoursLedger({ verifiedMinutes = 0, pendingMinutes = 0, requiredMinutes = 0 }) {
+    if (!(requiredMinutes > 0)) {
+        return { verifiedPercent: 0, pendingPercent: 0, tickPercent: null, label: 'No required hours set' }
+    }
+    const verifiedPercent = Math.min(100, (verifiedMinutes / requiredMinutes) * 100)
+    const pendingPercent = Math.min(100 - verifiedPercent, (pendingMinutes / requiredMinutes) * 100)
+    const tickPercent = Math.min(100, (WEEK_MINUTES / requiredMinutes) * 100)
+    const label = `${formatMinutes(verifiedMinutes)} of ${formatMinutes(requiredMinutes)} verified, `
+        + `${formatMinutes(pendingMinutes)} pending review`
+    return { verifiedPercent, pendingPercent, tickPercent, label }
+}
