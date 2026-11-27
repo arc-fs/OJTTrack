@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { apiJson } from './api.js'
+import { statusInfo } from './status.js'
 import {
     canLogYet, changedFields, dateProblem, formatMinutes, isEditable, shiftMinutes, shiftProblem, toHHmm,
 } from './format.js'
@@ -163,7 +164,7 @@ function TimeLogForm({ editLog, placementId, placements, logs, dataVersion, toda
             )}
             {isEdit && refreshed && saved && (
                 <div role="group" aria-label="Saved version">
-                    <h4>Saved version ({saved.status})</h4>
+                    <h4>Saved version ({statusInfo('log', saved.status).text})</h4>
                     {saved.status === 'RETURNED' && saved.feedback && (
                         <p><strong>Coordinator feedback:</strong> {saved.feedback}</p>
                     )}

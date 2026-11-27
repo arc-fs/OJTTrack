@@ -1,4 +1,5 @@
 import { formatMinutes, toHHmm } from './format.js'
+import StatusBadge from './StatusBadge.jsx'
 import TableScroll from './TableScroll.jsx'
 
 /**
@@ -7,7 +8,7 @@ import TableScroll from './TableScroll.jsx'
  * Data-heavy (rows are compared across dates), so on phones it scrolls instead of stacking.
  */
 function TimeLogTable({ logs, renderActions }) {
-    if (logs.length === 0) return <p>No logs yet.</p>
+    if (logs.length === 0) return <p className="empty">No logs yet.</p>
 
     return (
         <TableScroll label="Time logs">
@@ -33,7 +34,7 @@ function TimeLogTable({ logs, renderActions }) {
                             </td>
                             <td>{formatMinutes(log.workedMinutes)}</td>
                             <td>
-                                {log.status}
+                                <StatusBadge kind="log" status={log.status} />
                                 {log.status === 'VERIFIED' && log.verifiedByName && (
                                     <> by {log.verifiedByName} on {new Date(log.verifiedAt).toLocaleDateString()}</>
                                 )}

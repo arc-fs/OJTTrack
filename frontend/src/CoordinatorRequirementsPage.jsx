@@ -109,7 +109,7 @@ function CoordinatorRequirementsPage({ active }) {
         reload()
     }
 
-    if (loading) return <p>Loading...</p>
+    if (loading) return <p className="loading" role="status">Loading…</p>
     if (loadError) return <p role="alert">Could not load requirements: {loadError}</p>
 
     const opened = requirements.find((r) => r.id === openId)
@@ -120,18 +120,25 @@ function CoordinatorRequirementsPage({ active }) {
             {message && <p role={message.kind}>{message.text}</p>}
 
             {createDraft ? (
-                <RequirementForm mode="create" draft={createDraft} onChange={setCreateDraft} onSave={create}
-                                 onCancel={discardCreate} students={students} busy={creating} error={createError} />
+                <section aria-label="New requirement">
+                    <RequirementForm mode="create" draft={createDraft} onChange={setCreateDraft} onSave={create}
+                                     onCancel={discardCreate} students={students} busy={creating} error={createError} />
+                </section>
             ) : (
-                <button type="button" onClick={() => setCreateDraft(emptyDraft())}>New requirement</button>
+                <p>
+                    <button type="button" data-variant="primary" onClick={() => setCreateDraft(emptyDraft())}>
+                        New requirement
+                    </button>
+                </p>
             )}
 
+            <section aria-label="My requirements">
             <h2>My requirements</h2>
             <label>
                 <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
                 {' '}Show archived
             </label>
-            {requirements.length === 0 ? <p>No requirements yet.</p> : (
+            {requirements.length === 0 ? <p className="empty">No requirements yet.</p> : (
                 // stack-table: a card per requirement on phones; .cell-label is shown only there
                 <table className="stack-table">
                     <thead>
@@ -145,7 +152,7 @@ function CoordinatorRequirementsPage({ active }) {
                     <tbody>
                         {requirements.map((r) => (
                             <tr key={r.id}>
-                                <td>{r.title}{r.archived && ' (Archived)'}</td>
+                                <td>{r.title}{r.archived && <> <span className="badge">Archived</span></>}</td>
                                 <td><span className="cell-label">Due</span>{r.dueDate ?? '—'}</td>
                                 <td>
                                     <span className="cell-label">Progress</span>
@@ -162,6 +169,7 @@ function CoordinatorRequirementsPage({ active }) {
                     </tbody>
                 </table>
             )}
+            </section>
 
             {opened && (
                 // key: opening another requirement starts its detail fresh (drafts live here, so none are lost)

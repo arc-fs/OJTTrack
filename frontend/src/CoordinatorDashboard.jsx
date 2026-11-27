@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { apiFetch } from './api.js'
-import { formatMinutes, roleText } from './format.js'
+import { roleText } from './format.js'
+import ProgressCard from './ProgressCard.jsx'
 import { statusLabel } from './requirements.js'
+import StatusBadge from './StatusBadge.jsx'
 
 /**
  * Coordinator Dashboard tab (MVP §4.6). The server computes the totals and the
@@ -26,7 +28,7 @@ function CoordinatorDashboard({ active, goTo }) {
     }, [active])
 
     if (error) return <p role="alert">Could not load the dashboard: {error}</p>
-    if (!data) return <p>Loading...</p>
+    if (!data) return <p className="loading" role="status">Loading…</p>
 
     const { totals, students } = data
     const flagged = students.filter((s) => s.flags.length > 0)
@@ -35,42 +37,49 @@ function CoordinatorDashboard({ active, goTo }) {
         <div>
             <h1>Dashboard</h1>
 
-            <section aria-label="Totals">
-                <p>
-                    {totals.students} student(s) · {totals.activePlacements} active placement(s) ·{' '}
-                    {totals.completedPlacements} completed
-                </p>
-                <p>
-                    {totals.logsAwaitingReview} log(s) awaiting review{' '}
+            {/* The totals are context, so they are one ruled strip; "Needs attention" is the priority. */}
+            <ul className="totals" aria-label="Totals">
+                <li><span className="figure">{totals.students}</span> students</li>
+                <li><span className="figure">{totals.activePlacements}</span> active placements</li>
+                <li><span className="figure">{totals.completedPlacements}</span> completed</li>
+                <li>
+                    <span className="figure">{totals.logsAwaitingReview}</span> logs awaiting review
                     {totals.logsAwaitingReview > 0 && (
-                        <button type="button" onClick={() => goTo('review')}>Open review queue</button>
+                        <><br /><button type="button" onClick={() => goTo('review')}>Open review queue</button></>
                     )}
-                </p>
-                <p>
-                    {totals.requirementsAwaitingReview} requirement submission(s) awaiting review{' '}
+                </li>
+                <li>
+                    <span className="figure">{totals.requirementsAwaitingReview}</span> requirement submissions
+                    awaiting review
                     {totals.requirementsAwaitingReview > 0 && (
-                        <button type="button" onClick={() => goTo('requirements')}>Open Requirements</button>
+                        <><br /><button type="button" onClick={() => goTo('requirements')}>Open Requirements</button></>
                     )}
-                </p>
-            </section>
+                </li>
+            </ul>
 
             <section aria-label="Needs attention">
                 <h2>Needs attention</h2>
-                {flagged.length === 0 ? <p>No students need attention right now.</p> : (
-                    <ul>
+                {flagged.length === 0 ? <p className="empty">No students need attention right now.</p> : (
+                    <ul className="attention">
                         {flagged.map((s) => (
                             <li key={s.studentId}>
-                                <strong>{s.fullName}</strong>
-                                {s.placement && <> · {s.placement.companyName}</>}
-                                <ul>
+                                <div>
+                                    <strong>{s.fullName}</strong>
+                                    {s.placement && <p className="muted">{s.placement.companyName}</p>}
+                                </div>
+                                <ul className="attention-flags">
                                     {s.flags.map((flag) => (
                                         <li key={flag.code}>
-                                            {flag.message}
+                                            <span className="flag">
+                                                <span className="flag-mark" aria-hidden="true">!</span>
+                                                {flag.message}
+                                            </span>
                                             {flag.code === 'OVERDUE_REQUIREMENTS' && (
                                                 <ul>
                                                     {s.overdueRequirements.map((r) => (
                                                         <li key={r.requirementId}>
-                                                            {r.title}: due {r.dueDate} ({statusLabel(r.status)})
+                                                            {r.title}, due <time>{r.dueDate}</time>{' '}
+                                                            ({statusLabel(r.status)})
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -82,7 +91,7 @@ function CoordinatorDashboard({ active, goTo }) {
                         ))}
                     </ul>
                 )}
-                <p>
+                <p className="muted">
                     These are prompts to check in, not conclusions: for example, &quot;No logs since …&quot; can be a
                     holiday. &quot;No placement yet&quot; only appears from the placement search start date you set
                     in Students.
@@ -91,7 +100,7 @@ function CoordinatorDashboard({ active, goTo }) {
 
             <section aria-label="All students">
                 <h2>All students</h2>
-                {students.length === 0 ? <p>No students yet. Create them in Students.</p> : (
+                {students.length === 0 ? <p className="empty">No students yet. Create them in Students.</p> : (
                     // stack-table: a card per student on phones; .cell-label is shown only there
                     <table className="stack-table">
                         <thead>
@@ -108,18 +117,20 @@ function CoordinatorDashboard({ active, goTo }) {
                                     <td>{s.fullName}</td>
                                     <td>
                                         <span className="cell-label">Placement</span>
-                                        {s.placement
-                                            ? `${s.placement.companyName} · ${roleText(s.placement.role)} (${s.placement.status})`
-                                            : '—'}
+                                        {s.placement ? (
+                                            <>
+                                                {s.placement.companyName} · {roleText(s.placement.role)}{' '}
+                                                <StatusBadge kind="placement" status={s.placement.status} />
+                                            </>
+                                        ) : '—'}
                                     </td>
                                     <td>
                                         <span className="cell-label">Progress</span>
                                         {s.placement ? (
                                             <>
-                                                {formatMinutes(s.placement.progress.verifiedMinutes)} of{' '}
-                                                {formatMinutes(s.placement.progress.requiredMinutes)} verified
+                                                <ProgressCard summary={s.placement.progress} compact />
                                                 {s.placement.status === 'ACTIVE' && (
-                                                    <> <button type="button" onClick={() => goTo('progress')}>Progress</button></>
+                                                    <button type="button" onClick={() => goTo('progress')}>Progress</button>
                                                 )}
                                             </>
                                         ) : '—'}

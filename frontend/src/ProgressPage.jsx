@@ -133,7 +133,7 @@ function ProgressPage({ active }) {
         }
     }
 
-    if (loading) return <p>Loading...</p>
+    if (loading) return <p className="loading" role="status">Loading…</p>
     if (loadError) return <p role="alert">Could not load placements: {loadError}</p>
 
     const opened = placements.find((p) => p.placementId === openId)
@@ -149,7 +149,7 @@ function ProgressPage({ active }) {
             <h1>Progress</h1>
             {message && <p role={message.kind}>{message.text}</p>}
 
-            {placements.length === 0 ? <p>No active placements.</p> : (
+            {placements.length === 0 ? <p className="empty">No active placements.</p> : (
                 // card-list / card-title / card-actions only change the phone layout; actions come last
                 <ul className="card-list">
                     {placements.map((p) => (
@@ -171,7 +171,7 @@ function ProgressPage({ active }) {
                 <section aria-label="Open placement">
                     <h2>{opened.studentName} at {opened.companyName} · {roleText(opened.role)}</h2>
                     {detailError ? <p role="alert">Could not load this placement: {detailError}</p>
-                        : !details ? <p>Loading...</p> : (
+                        : !details ? <p className="loading" role="status">Loading…</p> : (
                         <>
                             <ProgressCard summary={summary} completionNote="Ready for you to confirm completion." />
                             <button type="button" data-variant="primary" disabled={!canComplete || busy}
@@ -194,7 +194,7 @@ function ProgressPage({ active }) {
                                                     onClick={() => unverify(log)}>
                                                 Un-verify
                                             </button>{' '}
-                                            <button type="button" onClick={() => setUnverifyingId(null)}>Cancel</button>
+                                            <button type="button" data-variant="quiet" onClick={() => setUnverifyingId(null)}>Cancel</button>
                                         </div>
                                     ) : (
                                         <button type="button" disabled={busy} onClick={() => setUnverifyingId(log.id)}>
@@ -217,7 +217,7 @@ function RequirementsSummary({ state }) {
         <section aria-label="Requirements">
             <h3>Requirements</h3>
             <p>Requirements don&apos;t block completion. Review them before confirming. (Only requirements you created are counted.)</p>
-            {!state ? <p>Loading...</p>
+            {!state ? <p className="loading" role="status">Loading…</p>
                 : state.error ? <p role="alert">Could not load requirements: {state.error}</p> : (
                     <>
                         <p>{progressText(state.data, false)}</p>

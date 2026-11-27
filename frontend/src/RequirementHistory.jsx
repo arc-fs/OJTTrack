@@ -14,7 +14,7 @@ function RequirementHistory({ history }) {
     return (
         <details>
             <summary>History ({history.length})</summary>
-            {history.length === 0 ? <p>No history yet.</p> : (
+            {history.length === 0 ? <p className="empty">No history yet.</p> : (
                 <ol>
                     {history.map((event, index) => (
                         <li key={index}>

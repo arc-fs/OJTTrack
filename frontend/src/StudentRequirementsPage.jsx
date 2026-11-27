@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { apiFetch, apiJson } from './api.js'
 import RequirementHistory from './RequirementHistory.jsx'
-import { MAX_NOTE, canSubmit, dueBadge, statusLabel } from './requirements.js'
+import { MAX_NOTE, canSubmit, dueBadge } from './requirements.js'
+import StatusBadge from './StatusBadge.jsx'
 
 /**
  * Student Requirements tab (MVP §4.7): the requirements a coordinator assigned to me.
@@ -73,7 +74,7 @@ function StudentRequirementsPage({ active }) {
     const submittable = new Set(items.filter(canSubmit).map((i) => i.assignmentId))
     const keptNotes = Object.entries(notes).filter(([id, text]) => !submittable.has(Number(id)) && text.trim())
 
-    if (loading) return <p>Loading...</p>
+    if (loading) return <p className="loading" role="status">Loading…</p>
     if (loadError) return <p role="alert">Could not load your requirements: {loadError}</p>
 
     return (
@@ -85,7 +86,7 @@ function StudentRequirementsPage({ active }) {
             </label>
             {message && <p role={message.kind}>{message.text}</p>}
 
-            {items.length === 0 ? <p>No requirements assigned yet.</p> : (
+            {items.length === 0 ? <p className="empty">No requirements assigned yet.</p> : (
                 // card-list / card-actions only change the phone layout. Order: title, status with
                 // its badge, details, history, then the actions last.
                 <ul className="card-list">
@@ -96,13 +97,16 @@ function StudentRequirementsPage({ active }) {
                             <li key={id}>
                                 <h2>
                                     {item.title}
-                                    {item.archived && ' (Archived)'}
+                                    {item.archived && <> <span className="badge">Archived</span></>}
                                 </h2>
                                 {item.description && <p>{item.description}</p>}
                                 <p>
-                                    {item.dueDate ? <>Due {item.dueDate}</> : 'No due date'} · {statusLabel(item.status, item.archived)}
-                                    {item.confirmedAt && <> on {new Date(item.confirmedAt).toLocaleDateString()}</>}
-                                    {badge && <> <strong className="badge">[{badge}]</strong></>}
+                                    <StatusBadge kind="requirement" status={item.status} archived={item.archived} />
+                                    {badge && <>{' '}<StatusBadge kind="due" status={badge === 'Overdue' ? 'OVERDUE' : 'DUE_SOON'} /></>}
+                                </p>
+                                <p className="muted">
+                                    {item.dueDate ? <>Due <time>{item.dueDate}</time></> : 'No due date'}
+                                    {item.confirmedAt && <>, confirmed on {new Date(item.confirmedAt).toLocaleDateString()}</>}
                                 </p>
                                 {item.status === 'RETURNED' && item.feedback && (
                                     <p role="note"><strong>Coordinator feedback:</strong> {item.feedback}</p>
@@ -131,7 +135,7 @@ function StudentRequirementsPage({ active }) {
                                                         onClick={() => submit(item)}>
                                                     Submit
                                                 </button>{' '}
-                                                <button type="button" onClick={() => setOpenId(null)}>Cancel</button>
+                                                <button type="button" data-variant="quiet" onClick={() => setOpenId(null)}>Cancel</button>
                                                 <span> (your note is kept)</span>
                                             </>
                                         )}
@@ -150,7 +154,7 @@ function StudentRequirementsPage({ active }) {
                         <div key={id}>
                             <p>This requirement changed and can&apos;t be submitted right now. Your note is kept below.</p>
                             <textarea readOnly value={text} aria-label="Kept note" />
-                            <button type="button" onClick={() => dropNote(Number(id))}>Dismiss</button>
+                            <button type="button" data-variant="quiet" onClick={() => dropNote(Number(id))}>Dismiss</button>
                         </div>
                     ))}
                 </section>

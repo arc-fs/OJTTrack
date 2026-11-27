@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiFetch, apiJson } from './api.js'
+import { sentenceCase } from './status.js'
 import StudentPlacement from './StudentPlacement.jsx'
 
 const STATUSES = ['PLANNED', 'APPLIED', 'INTERVIEW', 'OFFERED', 'ACCEPTED', 'REJECTED', 'WITHDRAWN']
@@ -113,7 +114,7 @@ function ApplicationsPage() {
         updateApplication(app, { followUpDate: newDate || null })
     }
 
-    if (loading) return <p>Loading...</p>
+    if (loading) return <p className="loading" role="status">Loading…</p>
     if (error) return <p role="alert">Could not load your data: {error}</p>
     const visible = applications.filter(
         (app) =>
@@ -122,6 +123,8 @@ function ApplicationsPage() {
     )
     return (
         <div>
+            <h1>Applications &amp; placement</h1>
+
             <StudentPlacement
                 applications={applications}
                 placements={placements}
@@ -129,8 +132,8 @@ function ApplicationsPage() {
                 onSubmitted={handleRequestSubmitted}
             />
 
-            <h1>My Applications</h1>
-
+            <section aria-label="Add an application">
+            <h2>Add an application</h2>
             <form onSubmit={handleSubmit}>
                 <label htmlFor="company">Company name</label>
                 <input
@@ -142,7 +145,7 @@ function ApplicationsPage() {
                 <label htmlFor="status">Status</label>
                 <select id="status" value={status} onChange={(e) => setStatus(e.target.value)}>
                     {STATUSES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
+                        <option key={s} value={s}>{sentenceCase(s)}</option>
                     ))}
                 </select>
                 <label htmlFor="follow-up">Follow up on (optional)</label>
@@ -152,21 +155,29 @@ function ApplicationsPage() {
                 {formError && <p role="alert">{formError}</p>}
                 {notice && <p role="status">{notice}</p>}
             </form>
-            <div>
-                <label htmlFor="search">Search</label>
-                <input id="search" value={search} onChange={(e) => setSearch(e.target.value)} />
-                <label htmlFor="filter">Filter by status</label>
-                <select id="filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                    <option value="ALL">ALL</option>
-                    {STATUSES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                    ))}
-                </select>
+            </section>
+
+            <section aria-label="My applications">
+            <h2>My applications</h2>
+            <div className="filters">
+                <div>
+                    <label htmlFor="search">Search</label>
+                    <input id="search" value={search} onChange={(e) => setSearch(e.target.value)} />
+                </div>
+                <div>
+                    <label htmlFor="filter">Filter by status</label>
+                    <select id="filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                        <option value="ALL">All statuses</option>
+                        {STATUSES.map((s) => (
+                            <option key={s} value={s}>{sentenceCase(s)}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
             {applications.length === 0 ? (
-                <p>No applications yet.</p>
+                <p className="empty">No applications yet.</p>
             ) : visible.length === 0 ? (
-                <p>No applications match your filters.</p>
+                <p className="empty">No applications match your filters.</p>
             ) : (
                 // card-list / card-title / card-actions: spans and classes that only change phone layout
                 <ul className="card-list">
@@ -183,7 +194,7 @@ function ApplicationsPage() {
                                     onChange={(e) => handleStatusChange(app, e.target.value)}
                                 >
                                     {STATUSES.map((s) => (
-                                        <option key={s} value={s}>{s}</option>
+                                        <option key={s} value={s}>{sentenceCase(s)}</option>
                                     ))}
                                 </select>{' '}
                                 <label>
@@ -203,6 +214,7 @@ function ApplicationsPage() {
                     })}
                 </ul>
             )}
+            </section>
         </div>
     )
 }

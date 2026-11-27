@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from './api.js'
 import { roleText } from './format.js'
 import ProgressCard from './ProgressCard.jsx'
-import { statusLabel } from './requirements.js'
+import StatusBadge from './StatusBadge.jsx'
+import { sentenceCase } from './status.js'
 
 const STATUS_ORDER = ['PLANNED', 'APPLIED', 'INTERVIEW', 'OFFERED', 'ACCEPTED', 'REJECTED', 'WITHDRAWN']
 
@@ -28,11 +29,16 @@ function StudentDashboard({ active, goTo }) {
     }, [active])
 
     if (error) return <p role="alert">Could not load your dashboard: {error}</p>
-    if (!data) return <p>Loading...</p>
+    if (!data) return <p className="loading" role="status">Loading…</p>
 
     const overdue = data.followUps.filter((f) => f.overdue)
     const upcoming = data.followUps.filter((f) => !f.overdue)
     const progress = data.placement?.progress
+    const followUp = (f) => (
+        <li key={f.applicationId}>
+            {f.companyName}, {sentenceCase(f.status)}: <time>{f.followUpDate}</time>
+        </li>
+    )
 
     return (
         <div>
@@ -41,12 +47,21 @@ function StudentDashboard({ active, goTo }) {
             <section aria-label="Placement">
                 <h2>My placement</h2>
                 {!data.placement ? (
-                    <p>No placement yet. <button type="button" onClick={() => goTo('applications')}>Go to Applications &amp; placement</button></p>
+                    <>
+                        <p className="empty">No placement yet. Request one from an accepted application.</p>
+                        <button type="button" onClick={() => goTo('applications')}>Go to Applications &amp; placement</button>
+                    </>
                 ) : (
                     <>
-                        <p><strong>{data.placement.companyName}</strong> · {roleText(data.placement.role)}{' '}
-                            ({data.placement.status}) ·{' '}
-                            {data.placement.startDate} to {data.placement.endDate}</p>
+                        <div className="record-head">
+                            <p className="record-title">
+                                <strong>{data.placement.companyName}</strong> · {roleText(data.placement.role)}
+                            </p>
+                            <StatusBadge kind="placement" status={data.placement.status} />
+                        </div>
+                        <p className="muted">
+                            <time>{data.placement.startDate}</time> to <time>{data.placement.endDate}</time>
+                        </p>
                         <ProgressCard summary={progress}
                                       completionNote="Waiting for your coordinator to confirm completion." />
                     </>
@@ -72,37 +87,44 @@ function StudentDashboard({ active, goTo }) {
                 </section>
             )}
 
-            <RequirementsSection requirements={data.requirements} goTo={goTo} />
+            <div className="dashboard-columns">
+                <RequirementsSection requirements={data.requirements} goTo={goTo} />
 
-            <section aria-label="Follow-ups">
-                <h2>Follow-ups</h2>
-                {data.followUps.length === 0 ? <p>No follow-ups due in the next 7 days.</p> : (
-                    <>
-                        {overdue.length > 0 && (
+                <div>
+                    <section aria-label="Follow-ups">
+                        <h2>Follow-ups</h2>
+                        {data.followUps.length === 0 ? <p className="empty">No follow-ups due in the next 7 days.</p> : (
                             <>
-                                <h3>Overdue</h3>
-                                <ul>{overdue.map((f) => <li key={f.applicationId}>{f.companyName} ({f.status}): {f.followUpDate}</li>)}</ul>
+                                {overdue.length > 0 && (
+                                    <>
+                                        <h3>Overdue</h3>
+                                        <ul>{overdue.map(followUp)}</ul>
+                                    </>
+                                )}
+                                {upcoming.length > 0 && (
+                                    <>
+                                        <h3>Due within 7 days</h3>
+                                        <ul>{upcoming.map(followUp)}</ul>
+                                    </>
+                                )}
                             </>
                         )}
-                        {upcoming.length > 0 && (
-                            <>
-                                <h3>Due within 7 days</h3>
-                                <ul>{upcoming.map((f) => <li key={f.applicationId}>{f.companyName} ({f.status}): {f.followUpDate}</li>)}</ul>
-                            </>
-                        )}
-                    </>
-                )}
-            </section>
+                    </section>
 
-            <section aria-label="Applications">
-                <h2>Applications</h2>
-                <ul>
-                    {STATUS_ORDER.map((status) => (
-                        <li key={status}>{status}: {data.applicationCounts[status] ?? 0}</li>
-                    ))}
-                </ul>
-                <button type="button" onClick={() => goTo('applications')}>Manage applications</button>
-            </section>
+                    <section aria-label="Applications">
+                        <h2>Applications</h2>
+                        <ul className="counts">
+                            {STATUS_ORDER.map((status) => (
+                                <li key={status}>
+                                    <span>{sentenceCase(status)}</span>
+                                    <span>{data.applicationCounts[status] ?? 0}</span>
+                                </li>
+                            ))}
+                        </ul>
+                        <button type="button" onClick={() => goTo('applications')}>Manage applications</button>
+                    </section>
+                </div>
+            </div>
         </div>
     )
 }
@@ -112,7 +134,8 @@ function RequirementsSection({ requirements, goTo }) {
     const { overdue, dueSoon, returned } = requirements
     const item = (r) => (
         <li key={r.assignmentId}>
-            {r.title}{r.dueDate && <>: due {r.dueDate}</>} ({statusLabel(r.status)})
+            {r.title}{r.dueDate && <>, due <time>{r.dueDate}</time></>}{' '}
+            <StatusBadge kind="requirement" status={r.status} />
         </li>
     )
 
@@ -120,7 +143,7 @@ function RequirementsSection({ requirements, goTo }) {
         <section aria-label="Requirements">
             <h2>Requirements</h2>
             {overdue.length + dueSoon.length + returned.length === 0 ? (
-                <p>Nothing overdue or due in the next 7 days.</p>
+                <p className="empty">Nothing overdue or due in the next 7 days.</p>
             ) : (
                 <>
                     {overdue.length > 0 && <><h3>Overdue</h3><ul>{overdue.map(item)}</ul></>}

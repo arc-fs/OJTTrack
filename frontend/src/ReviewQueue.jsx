@@ -81,7 +81,7 @@ function ReviewQueue({ active }) {
     const queuedIds = new Set(queue.map((q) => q.log.id))
     const orphanDrafts = Object.entries(drafts).filter(([id, text]) => !queuedIds.has(Number(id)) && text.trim())
 
-    if (loading) return <p>Loading...</p>
+    if (loading) return <p className="loading" role="status">Loading…</p>
     if (loadError) return <p role="alert">Could not load the review queue: {loadError}</p>
 
     return (
@@ -89,7 +89,7 @@ function ReviewQueue({ active }) {
             <h1>Review queue</h1>
             {message && <p role={message.kind}>{message.text}</p>}
 
-            {queue.length === 0 ? <p>Nothing to review.</p> : (
+            {queue.length === 0 ? <p className="empty">Nothing to review.</p> : (
                 // card-list / card-title / card-actions only change the phone layout
                 <ul className="card-list">
                     {queue.map((item) => {
@@ -128,7 +128,7 @@ function ReviewQueue({ active }) {
                                                     onClick={() => decide(item, 'return')}>
                                                 Return with feedback
                                             </button>{' '}
-                                            <button type="button" onClick={() => setReturningId(null)}>Cancel</button>
+                                            <button type="button" data-variant="quiet" onClick={() => setReturningId(null)}>Cancel</button>
                                             <span> (your draft is kept)</span>
                                         </div>
                                     )}
@@ -146,7 +146,7 @@ function ReviewQueue({ active }) {
                         <div key={id}>
                             <p>This log changed or was already reviewed. Your draft is kept below.</p>
                             <textarea readOnly value={text} />
-                            <button type="button" onClick={() => dropDraft(Number(id))}>Dismiss</button>
+                            <button type="button" data-variant="quiet" onClick={() => dropDraft(Number(id))}>Dismiss</button>
                         </div>
                     ))}
                 </section>

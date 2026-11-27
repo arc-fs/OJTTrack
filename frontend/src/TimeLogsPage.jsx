@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from './api.js'
 import { canLogYet, dateProblem, todayIso } from './format.js'
 import ProgressCard from './ProgressCard.jsx'
+import { statusInfo } from './status.js'
 import TimeLogForm from './TimeLogForm.jsx'
 import TimeLogTable from './TimeLogTable.jsx'
 
@@ -67,14 +68,14 @@ function TimeLogsPage({ active }) {
 
     function handleSaved(saved) {
         setForm(null)
-        setNotice(`Saved your log for ${saved.logDate}. It is now ${saved.status}.`)
+        setNotice(`Saved your log for ${saved.logDate}. It is now ${statusInfo('log', saved.status).text.toLowerCase()}.`)
         reload()   // the server recalculates totals and the estimate
     }
 
-    if (loading) return <p>Loading...</p>
+    if (loading) return <p className="loading" role="status">Loading…</p>
     if (loadError) return <p role="alert">Could not load your time logs: {loadError}</p>
     if (data.placements.length === 0) {
-        return <p>No placement yet. Request one in Applications &amp; placement.</p>
+        return <p className="empty">No placement yet. Request one in Applications &amp; placement.</p>
     }
 
     return (
@@ -87,23 +88,27 @@ function TimeLogsPage({ active }) {
                     <select id="placement-select" value={data.selectedId ?? ''} disabled={form !== null}
                             onChange={(e) => setRequestedId(Number(e.target.value))}>
                         {data.placements.map((p) => (
-                            <option key={p.id} value={p.id}>{p.companyName} ({p.status})</option>
+                            <option key={p.id} value={p.id}>{p.companyName} ({statusInfo('placement', p.status).text})</option>
                         ))}
                     </select>
                     {form !== null && <span> Finish or cancel the open form to switch placements.</span>}
                 </>
             )}
 
-            <h2>{selected.companyName}</h2>
-            <ProgressCard summary={data.summary}
-                          completionNote="Waiting for your coordinator to confirm completion." />
+            <section aria-label="Hours">
+                <h2>{selected.companyName}</h2>
+                <ProgressCard summary={data.summary}
+                              completionNote="Waiting for your coordinator to confirm completion." />
+            </section>
 
+            <section aria-label="Logs">
+            <h2>Logs</h2>
             {!isActivePlacement && <p>Placement ended: logs can&apos;t be changed.</p>}
             {notice && <p role="status">{notice}</p>}
 
             {isActivePlacement && form === null && (
                 canLogYet(selected, today)
-                    ? <button type="button" onClick={() => openForm('create')}>Add a log</button>
+                    ? <button type="button" data-variant="primary" onClick={() => openForm('create')}>Add a log</button>
                     : <p>{dateProblem(today, selected, today)}.</p>
             )}
 
@@ -132,6 +137,7 @@ function TimeLogsPage({ active }) {
                     )
                 ) : null}
             />
+            </section>
         </div>
     )
 }

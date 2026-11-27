@@ -100,11 +100,11 @@ function PlacementRequests() {
             <h2>Placement requests</h2>
             {success && <p role="status">{success}</p>}
             {loading ? (
-                <p>Loading...</p>
+                <p className="loading" role="status">Loading…</p>
             ) : loadError ? (
                 <p role="alert">Could not load placement requests: {loadError}</p>
             ) : requests.length === 0 ? (
-                <p>No pending placement requests.</p>
+                <p className="empty">No pending placement requests.</p>
             ) : (
                 // card-list / card-title / card-actions only change the phone layout
                 <ul className="card-list">
@@ -152,7 +152,7 @@ function PlacementRequests() {
                                             data-variant={mode === 'approve' ? 'primary' : undefined}>
                                         {submitting ? 'Saving...' : mode === 'approve' ? 'Confirm approval' : 'Confirm rejection'}
                                     </button>{' '}
-                                    <button type="button" onClick={close} disabled={submitting}>Cancel</button>
+                                    <button type="button" data-variant="quiet" onClick={close} disabled={submitting}>Cancel</button>
                                     {formError && <p role="alert">{formError}</p>}
                                 </form>
                             )}

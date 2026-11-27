@@ -100,6 +100,7 @@ function CoordinatorPage() {
         <div>
             <h1>Students</h1>
 
+            <section aria-label="Create a student account">
             <form onSubmit={handleSubmit}>
                 <h2>Create a student account</h2>
                 <label htmlFor="student-email">Email</label>
@@ -136,24 +137,26 @@ function CoordinatorPage() {
                     value={searchStart}
                     onChange={(e) => setSearchStart(e.target.value)}
                 />
-                <p>{SEARCH_START_HELP}</p>
+                <p className="muted">{SEARCH_START_HELP}</p>
                 <button type="submit" data-variant="primary" disabled={submitting}>
                     {submitting ? 'Creating...' : 'Create student'}
                 </button>
                 {formError && <p role="alert">{formError}</p>}
                 {success && <p role="status">{success}</p>}
             </form>
+            </section>
 
-            <h2>Students</h2>
+            <section aria-label="Your students">
+            <h2>Your students</h2>
             {loading ? (
-                <p>Loading...</p>
+                <p className="loading" role="status">Loading…</p>
             ) : loadError ? (
                 <p role="alert">Could not load students: {loadError}</p>
             ) : students.length === 0 ? (
-                <p>No students yet. Create one above.</p>
+                <p className="empty">No students yet. Create one above.</p>
             ) : (
                 <>
-                    <p>{SEARCH_START_HELP}</p>
+                    <p className="muted">{SEARCH_START_HELP}</p>
                     {rowMessage && <p role={rowMessage.kind}>{rowMessage.text}</p>}
                     {/* stack-table: a card per student on phones; .cell-label is shown only there */}
                     <table className="stack-table">
@@ -179,7 +182,7 @@ function CoordinatorPage() {
                                         </td>
                                         <td className="actions">
                                             <span className="cell-label">Placement search starts on</span>
-                                            <input type="date" value={draft}
+                                            <input type="date" value={draft} className="row-field"
                                                    aria-label={`Placement search start for ${s.fullName}`}
                                                    onChange={(e) => setDateDrafts((prev) => ({ ...prev, [s.id]: e.target.value }))} />
                                             <button type="button" disabled={!changed}
@@ -194,6 +197,7 @@ function CoordinatorPage() {
                     </table>
                 </>
             )}
+            </section>
         </div>
     )
 }

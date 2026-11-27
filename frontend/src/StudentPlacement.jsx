@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { apiJson } from './api.js'
 import { roleText } from './format.js'
+import StatusBadge from './StatusBadge.jsx'
+import { statusInfo } from './status.js'
 
 const MAX_REASON = 500   // placement_requests.reason VARCHAR(500)
 
@@ -52,16 +54,17 @@ function StudentPlacement({ applications, placements, requests, onSubmitted }) {
     }
 
     return (
-        <section>
+        <section aria-label="My placement">
             <h2>My placement</h2>
 
             {active ? (
                 <div>
-                    <p><strong>{active.companyName}</strong> · {roleText(active.role)} (ACTIVE)</p>
+                    <p><strong>{active.companyName}</strong> · {roleText(active.role)}{' '}
+                        <StatusBadge kind="placement" status={active.status} /></p>
                     <p>{active.startDate} to {active.endDate} · {active.requiredHours} required hours</p>
                 </div>
             ) : (
-                <p>No placement yet.</p>
+                <p className="empty">No placement yet.</p>
             )}
 
             {pending ? (
@@ -106,7 +109,7 @@ function StudentPlacement({ applications, placements, requests, onSubmitted }) {
                     <ul>
                         {ended.map((p) => (
                             <li key={'p' + p.id}>
-                                {p.companyName}: {p.status} on {formatInstant(p.endedAt)}
+                                {p.companyName}: {statusInfo('placement', p.status).text} on {formatInstant(p.endedAt)}
                             </li>
                         ))}
                         {rejected.map((r) => (

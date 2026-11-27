@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 import { apiFetch, apiJson } from './api.js'
 import RequirementForm from './RequirementForm.jsx'
 import RequirementHistory from './RequirementHistory.jsx'
+import StatusBadge from './StatusBadge.jsx'
 import {
     MAX_REASON,
     anySubmitted,
     editWarning,
     replacementDraft,
-    statusLabel,
     unassignedStudents,
 } from './requirements.js'
 
@@ -178,7 +178,7 @@ function RequirementDetail({ requirement, students, token, onChanged, onClose, o
     }
 
     if (loadError) return <p role="alert">Could not load this requirement: {loadError}</p>
-    if (!assignments) return <p>Loading...</p>
+    if (!assignments) return <p className="loading" role="status">Loading…</p>
 
     const choices = archived ? [] : unassignedStudents(students, assignments)
     const editing = editDraft?.requirementId === id
@@ -217,7 +217,7 @@ function RequirementDetail({ requirement, students, token, onChanged, onClose, o
             )}
 
             <h3>Students</h3>
-            {assignments.length === 0 ? <p>No students are assigned.</p> : (
+            {assignments.length === 0 ? <p className="empty">No students are assigned.</p> : (
                 // stack-table: a card per student on phones; .cell-label is shown only there
                 <table className="stack-table">
                     <thead>
@@ -236,8 +236,8 @@ function RequirementDetail({ requirement, students, token, onChanged, onClose, o
                                     <td>{a.studentName}</td>
                                     <td>
                                         <span className="cell-label">Status</span>
-                                        {statusLabel(a.status, archived)}
-                                        {a.overdue && <> <strong className="badge">[Overdue]</strong></>}
+                                        <StatusBadge kind="requirement" status={a.status} archived={archived} />
+                                        {a.overdue && <>{' '}<StatusBadge kind="due" status="OVERDUE" /></>}
                                         {a.confirmedByName && <> by {a.confirmedByName}</>}
                                     </td>
                                     <td>
@@ -266,7 +266,7 @@ function RequirementDetail({ requirement, students, token, onChanged, onClose, o
                                                             onClick={() => review(a, action)}>
                                                         {ACTIONS[action].label}
                                                     </button>{' '}
-                                                    <button type="button" onClick={() => setOpenAction(null)}>Cancel</button>
+                                                    <button type="button" data-variant="quiet" onClick={() => setOpenAction(null)}>Cancel</button>
                                                     <span> (your draft is kept)</span>
                                                 </div>
                                             ) : (
@@ -295,7 +295,7 @@ function RequirementDetail({ requirement, students, token, onChanged, onClose, o
                         <div key={key}>
                             <p>This submission changed or can&apos;t be reviewed any more. Your draft is kept below.</p>
                             <textarea readOnly value={text} aria-label="Kept draft" />
-                            <button type="button" onClick={() => dropDraft(key)}>Dismiss</button>
+                            <button type="button" data-variant="quiet" onClick={() => dropDraft(key)}>Dismiss</button>
                         </div>
                     ))}
                 </section>
